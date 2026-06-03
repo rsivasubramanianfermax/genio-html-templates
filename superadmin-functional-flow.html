@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>iPlus Living — Super Admin: Functional Flow Document</title>
+  <style>
+    :root {
+      --primary: #7c3aed;
+      --primary-dark: #5b21b6;
+      --accent: #0ea5e9;
+      --success: #16a34a;
+      --warning: #d97706;
+      --danger: #dc2626;
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --border: #e2e8f0;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --code-bg: #f1f5f9;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+    .layout { display: flex; min-height: 100vh; }
+
+    /* Sidebar */
+    .sidebar { width: 280px; background: #3b0764; color: #fff; position: sticky; top: 0; height: 100vh; overflow-y: auto; flex-shrink: 0; }
+    .sidebar-header { padding: 24px 20px 16px; border-bottom: 1px solid rgba(255,255,255,0.15); }
+    .sidebar-header .tag { display: inline-block; background: rgba(255,255,255,0.15); font-size: 0.68rem; padding: 2px 8px; border-radius: 999px; margin-bottom: 8px; font-weight: 600; letter-spacing: .04em; }
+    .sidebar-header h2 { font-size: 1rem; font-weight: 700; }
+    .sidebar-header p  { font-size: 0.74rem; opacity: .65; margin-top: 4px; }
+    .sidebar nav { padding: 12px 0; }
+    .sidebar nav a { display: block; padding: 8px 20px; color: rgba(255,255,255,0.8); text-decoration: none; font-size: 0.82rem; transition: background .15s; }
+    .sidebar nav a:hover { background: rgba(255,255,255,0.1); color: #fff; }
+    .sidebar nav .section-label { padding: 14px 20px 4px; font-size: 0.67rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,0.4); }
+
+    /* Main */
+    .main { flex: 1; max-width: 980px; padding: 40px 52px; }
+
+    /* Page header */
+    .page-header { margin-bottom: 44px; padding-bottom: 28px; border-bottom: 2px solid var(--border); }
+    .page-header .badge { display: inline-block; background: var(--primary); color: #fff; font-size: 0.72rem; font-weight: 600; padding: 4px 12px; border-radius: 999px; margin-bottom: 14px; }
+    .page-header h1 { font-size: 2rem; font-weight: 800; line-height: 1.25; }
+    .page-header p  { color: var(--text-muted); margin-top: 10px; font-size: 0.95rem; max-width: 700px; }
+    .page-header .meta { display: flex; gap: 24px; margin-top: 16px; }
+    .page-header .meta span { font-size: 0.8rem; color: var(--text-muted); }
+    .page-header .meta strong { color: var(--text); }
+
+    /* Sections */
+    section { margin-bottom: 56px; }
+    section h2 { font-size: 1.35rem; font-weight: 700; color: var(--primary-dark); margin-bottom: 18px; padding-bottom: 10px; border-bottom: 2px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    section h2 .num { display: inline-flex; align-items: center; justify-content: center; background: var(--primary); color: #fff; border-radius: 6px; width: 28px; height: 28px; font-size: 0.78rem; font-weight: 800; flex-shrink: 0; }
+    section h3 { font-size: 1rem; font-weight: 700; color: var(--text); margin: 26px 0 10px; }
+    section p  { margin-bottom: 12px; font-size: 0.92rem; color: var(--text); }
+
+    /* Actor label */
+    .actor { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-size: 0.74rem; font-weight: 700; margin: 2px; }
+    .actor.super  { background: #ede9fe; color: #5b21b6; }
+    .actor.pm     { background: #dbeafe; color: #1e40af; }
+    .actor.staff  { background: #fce7f3; color: #9d174d; }
+    .actor.res    { background: #dcfce7; color: #166534; }
+    .actor.sys    { background: #f1f5f9; color: #475569; }
+    .actor-row    { display: flex; flex-wrap: wrap; gap: 4px; margin: 12px 0; }
+
+    /* Cards */
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+    .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin: 16px 0; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+    .card.full { grid-column: 1/-1; }
+    .card h4 { font-size: 0.88rem; font-weight: 700; margin-bottom: 8px; }
+    .card p, .card li { font-size: 0.84rem; color: var(--text-muted); line-height: 1.55; }
+    .card ul { padding-left: 16px; }
+    .card ul li { margin-bottom: 5px; }
+    .card.purple { border-left: 4px solid var(--primary); }
+    .card.blue   { border-left: 4px solid var(--accent); }
+    .card.green  { border-left: 4px solid var(--success); }
+    .card.amber  { border-left: 4px solid var(--warning); }
+    .card.red    { border-left: 4px solid var(--danger); }
+    .card.dark   { border-left: 4px solid #1e293b; }
+    .card.grey   { border-left: 4px solid #94a3b8; }
+    .card.teal   { border-left: 4px solid #0d9488; }
+
+    /* Callout */
+    .callout { border-radius: 8px; padding: 14px 18px; margin: 16px 0; font-size: 0.86rem; line-height: 1.6; }
+    .callout.info   { background: #f5f3ff; border-left: 4px solid var(--primary); }
+    .callout.warn   { background: #fffbeb; border-left: 4px solid var(--warning); }
+    .callout.green  { background: #f0fdf4; border-left: 4px solid var(--success); }
+    .callout.dark   { background: #f8fafc; border-left: 4px solid #1e293b; }
+    .callout.red    { background: #fef2f2; border-left: 4px solid var(--danger); }
+    .callout strong { display: block; margin-bottom: 4px; font-size: 0.88rem; }
+
+    /* Functional flow steps */
+    .fflow { counter-reset: step; }
+    .fflow-step { display: flex; gap: 16px; margin-bottom: 0; position: relative; }
+    .fflow-step::before { counter-increment: step; content: counter(step); display: flex; align-items: center; justify-content: center; background: var(--primary); color: #fff; border-radius: 50%; width: 28px; height: 28px; font-size: 0.75rem; font-weight: 800; flex-shrink: 0; margin-top: 2px; z-index: 1; }
+    .fflow-step::after { content: ''; position: absolute; left: 13px; top: 30px; bottom: -16px; width: 2px; background: #ddd8f0; }
+    .fflow-step:last-child::after { display: none; }
+    .fflow-body { padding-bottom: 20px; flex: 1; }
+    .fflow-body h4 { font-size: 0.9rem; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+    .fflow-body p  { font-size: 0.84rem; color: var(--text-muted); margin: 0; }
+    .fflow-body ul { padding-left: 16px; margin-top: 4px; }
+    .fflow-body ul li { font-size: 0.84rem; color: var(--text-muted); margin-bottom: 3px; }
+
+    /* Decision block */
+    .decision-block { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 14px 18px; margin: 10px 0; }
+    .decision-block h5 { font-size: 0.82rem; font-weight: 700; color: #92400e; margin-bottom: 8px; }
+    .decision-row { display: flex; gap: 12px; flex-wrap: wrap; }
+    .decision-opt { background: #fff; border: 1px solid #fde68a; border-radius: 6px; padding: 8px 12px; font-size: 0.8rem; flex: 1; min-width: 120px; }
+    .decision-opt strong { display: block; font-weight: 700; margin-bottom: 2px; }
+    .decision-opt.yes strong { color: var(--success); }
+    .decision-opt.no  strong { color: var(--danger); }
+    .decision-opt.alt strong { color: var(--primary); }
+
+    /* Table */
+    .tbl-wrap { overflow-x: auto; margin: 16px 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+    th { background: var(--primary-dark); color: #fff; padding: 10px 14px; text-align: left; font-weight: 600; }
+    td { padding: 9px 14px; border-bottom: 1px solid var(--border); vertical-align: top; font-size: 0.84rem; }
+    tr:nth-child(even) td { background: var(--bg); }
+    td code { background: var(--code-bg); padding: 1px 5px; border-radius: 3px; font-size: 0.79rem; }
+
+    /* Status */
+    .status { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 0.74rem; font-weight: 700; }
+    .s-active   { background:#dcfce7; color:#166534; }
+    .s-inactive { background:#f1f5f9; color:#475569; }
+    .s-pending  { background:#fef3c7; color:#92400e; }
+    .s-blocked  { background:#fee2e2; color:#991b1b; }
+
+    /* Journey timeline */
+    .journey { margin: 20px 0; }
+    .journey-phase { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+    .journey-phase-header { background: var(--primary); color: #fff; padding: 10px 18px; font-size: 0.85rem; font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
+    .journey-phase-header .who { font-size: 0.74rem; background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 999px; }
+    .journey-phase-body { padding: 14px 18px; }
+    .journey-phase-body ul { padding-left: 18px; }
+    .journey-phase-body li { font-size: 0.84rem; color: var(--text-muted); margin-bottom: 4px; }
+
+    .journey-phase-header.blue   { background: var(--accent); }
+    .journey-phase-header.green  { background: var(--success); }
+    .journey-phase-header.amber  { background: var(--warning); color: #1e293b; }
+    .journey-phase-header.dark   { background: #1e293b; }
+    .journey-phase-header.teal   { background: #0d9488; }
+
+    /* Permission matrix */
+    .perm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; margin: 14px 0; }
+    .perm-box { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
+    .perm-box h5 { font-size: 0.8rem; font-weight: 700; margin-bottom: 8px; color: var(--text); }
+    .perm-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.76rem; color: var(--text-muted); margin-bottom: 3px; }
+    .perm-row .check { color: var(--success); font-weight: 700; }
+    .perm-row .cross { color: var(--danger); }
+    .perm-row .part  { color: var(--warning); }
+
+    @media (max-width: 900px) {
+      .layout { flex-direction: column; }
+      .sidebar { width: 100%; height: auto; position: static; }
+      .main { padding: 24px 20px; }
+      .grid2, .grid3 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- ═══════════════════════════════ SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="tag">Functional Flow</div>
+      <h2>Super Admin Backend</h2>
+      <p>iPlus Living — Business Process Document</p>
+    </div>
+    <nav>
+      <div class="section-label">Introduction</div>
+      <a href="#actors">Actors &amp; Who Does What</a>
+      <a href="#overview-journey">End-to-End Journey</a>
+      <a href="#access-rules">Who Can Access What</a>
+
+      <div class="section-label">Condo Onboarding</div>
+      <a href="#f-new-condo">New Property Onboarding</a>
+      <a href="#f-units">Setting Up Units &amp; Blocks</a>
+      <a href="#f-construction">Construction → Live Mode</a>
+      <a href="#f-branding">Branding &amp; Localisation</a>
+
+      <div class="section-label">User Onboarding</div>
+      <a href="#f-pm">Onboard a Property Manager</a>
+      <a href="#f-staff">Onboard Staff &amp; Concierge</a>
+      <a href="#f-resident">Onboard a Resident</a>
+      <a href="#f-developer">Onboard Developer / Contractor</a>
+
+      <div class="section-label">Roles & Permissions</div>
+      <a href="#f-role-design">Designing a Role</a>
+      <a href="#f-perm-matrix">Permission Decision Matrix</a>
+      <a href="#f-perm-change">Changing Permissions</a>
+
+      <div class="section-label">Day-to-Day Operations</div>
+      <a href="#f-account-issues">Account Issues &amp; Fixes</a>
+      <a href="#f-payment-config">Payment Configuration</a>
+      <a href="#f-agreement">House Rules &amp; Agreement</a>
+      <a href="#f-module-config">Module Behaviour Config</a>
+
+      <div class="section-label">Data & Reporting</div>
+      <a href="#f-bulk-ops">Bulk Data Operations</a>
+      <a href="#f-exports">Reporting &amp; Exports</a>
+      <a href="#f-wallet">Wallet Management</a>
+
+      <div class="section-label">Business Rules</div>
+      <a href="#rules-summary">Key Business Rules Summary</a>
+      <a href="#decision-trees">Decision Trees</a>
+    </nav>
+  </aside>
+
+  <!-- ═══════════════════════════════ MAIN -->
+  <main class="main">
+
+    <div class="page-header">
+      <span class="badge">Functional Flow Document</span>
+      <h1>Super Admin Backend<br>Business Process Guide</h1>
+      <p>This document describes what happens functionally when a Super Admin or Property Manager uses the iPlus Living backend — covering every actor, every decision, every outcome, and every business rule in plain language.</p>
+      <div class="meta">
+        <span><strong>Audience:</strong> Business Analysts, Product Managers, QA, Onboarding Teams</span>
+        <span><strong>System:</strong> iPlus Living Backend Panel</span>
+        <span><strong>Prepared by:</strong> Sivasubramanian R</span>
+      </div>
+    </div>
+
+    <!-- ════ ACTORS ════ -->
+    <section id="actors">
+      <h2><span class="num">1</span> Actors — Who Does What</h2>
+      <p>The backend panel has two types of actors. Understanding who acts at each stage is critical to understanding the functional flows.</p>
+
+      <div class="grid2">
+        <div class="card purple">
+          <h4><span class="actor super">Super Admin</span></h4>
+          <ul>
+            <li>Belongs to iPlus Living (the platform provider)</li>
+            <li>Creates and manages all condos across all companies</li>
+            <li>Creates Property Manager accounts and assigns them to condos</li>
+            <li>Sets up roles, permissions, and global settings</li>
+            <li>Manages subscription and licensing for each condo</li>
+            <li>Can access every condo, every feature, every report</li>
+            <li>Highest level of trust in the system</li>
+          </ul>
+        </div>
+        <div class="card blue">
+          <h4><span class="actor pm">Property Manager (PM)</span></h4>
+          <ul>
+            <li>Belongs to the property management company</li>
+            <li>Can only see and manage their assigned condos</li>
+            <li>Creates and manages staff, concierge, resident accounts within their condos</li>
+            <li>Configures day-to-day condo settings</li>
+            <li>Cannot create new condos or touch other companies' data</li>
+            <li>Cannot manage roles globally — only assigns existing roles</li>
+          </ul>
+        </div>
+        <div class="card green full">
+          <h4>Supporting Actors (outside the backend panel)</h4>
+          <ul>
+            <li><span class="actor staff">Staff / Concierge</span> — Use the frontend portal. Created by PM/Super Admin in backend but never log into the backend panel itself.</li>
+            <li><span class="actor res">Resident</span> — Use the mobile app / resident portal only. Created by PM or self-register. No backend access.</li>
+            <li><span class="actor sys">System</span> — Automated actions triggered by the platform (cache clearing, sync, notifications) that happen without a human initiating them.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════ END-TO-END JOURNEY ════ -->
+    <section id="overview-journey">
+      <h2><span class="num">2</span> End-to-End Onboarding Journey</h2>
+      <p>When a new property joins iPlus Living, this is the complete journey from zero to residents using the app — in the order it must happen:</p>
+
+      <div class="journey">
+        <div class="journey-phase">
+          <div class="journey-phase-header"><span>Phase 1 — Property Setup</span><span class="who">Super Admin</span></div>
+          <div class="journey-phase-body">
+            <ul>
+              <li>Super Admin creates the condo record with name, address, package, currency, timezone</li>
+              <li>Super Admin sets condo status — "Under Construction" or "Active"</li>
+              <li>Super Admin configures 100+ condo settings (payment gateway, language, booking rules)</li>
+              <li>Super Admin sets up module branding (custom names for modules and roles)</li>
+            </ul>
+          </div>
+        </div>
+        <div class="journey-phase">
+          <div class="journey-phase-header blue"><span>Phase 2 — Structure Setup</span><span class="who">Super Admin</span></div>
+          <div class="journey-phase-body">
+            <ul>
+              <li>Define blocks/towers → floors → units (can be done manually or via CSV import)</li>
+              <li>Map units to physical access controllers (door, lift)</li>
+              <li>Import QR codes for units (for key collection and visitor access)</li>
+            </ul>
+          </div>
+        </div>
+        <div class="journey-phase">
+          <div class="journey-phase-header teal"><span>Phase 3 — Role &amp; Permission Setup</span><span class="who">Super Admin</span></div>
+          <div class="journey-phase-body">
+            <ul>
+              <li>Create roles if custom roles are needed (e.g., "Security Guard" as a sub-type of Staff)</li>
+              <li>Assign roles to the condo (activate them for this property)</li>
+              <li>Set module permissions for each role — what each role can View, Add, Update, Delete, Approve</li>
+              <li>Configure tenancy agreement if residents must accept house rules on first login</li>
+            </ul>
+          </div>
+        </div>
+        <div class="journey-phase">
+          <div class="journey-phase-header amber"><span>Phase 4 — User Onboarding</span><span class="who">Super Admin + PM</span></div>
+          <div class="journey-phase-body">
+            <ul>
+              <li>Super Admin creates the Property Manager account and assigns to the condo</li>
+              <li>PM (or Super Admin) creates staff and concierge accounts</li>
+              <li>Residents self-register via mobile app using their unit number, OR PM bulk-imports resident data</li>
+              <li>If it is a construction-phase condo: developer and contractor accounts are created first</li>
+            </ul>
+          </div>
+        </div>
+        <div class="journey-phase">
+          <div class="journey-phase-header green"><span>Phase 5 — Go Live</span><span class="who">Super Admin</span></div>
+          <div class="journey-phase-body">
+            <ul>
+              <li>Super Admin confirms condo status is "Active"</li>
+              <li>If was under construction: mark as construction-completed → developer access reduced, resident features enabled</li>
+              <li>Residents can now download the app, register, and start using all features</li>
+              <li>PM monitors day-to-day operations through the frontend portal</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════ WHO CAN ACCESS WHAT ════ -->
+    <section id="access-rules">
+      <h2><span class="num">3</span> Who Can Access What</h2>
+      <p>This matrix shows which actor can perform which category of action in the backend panel:</p>
+
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Action Category</th>
+              <th><span class="actor super">Super Admin</span></th>
+              <th><span class="actor pm">Property Manager</span></th>
+              <th><span class="actor staff">Staff / Concierge</span></th>
+              <th><span class="actor res">Resident</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Create new condo</td><td>✅ Yes</td><td>❌ No</td><td>❌ No</td><td>❌ No</td></tr>
+            <tr><td>Configure condo settings</td><td>✅ Yes</td><td>✅ Own condos only</td><td>❌ No</td><td>❌ No</td></tr>
+            <tr><td>Import units / vehicles</td><td>✅ Yes</td><td>✅ Own condos only</td><td>❌ No</td><td>❌ No</td></tr>
+            <tr><td>Create global roles</td><td>✅ Yes</td><td>❌ No</td><td>❌ No</td><td>❌ No</td></tr>
+            <tr><td>Assign roles to condo</td><td>✅ Yes</td><td>❌ No</td><td>❌ No</td><td>❌ No</td></tr>
+            <tr><td>Set module permissions</td><td>✅ Yes</td><td>❌ No</td><td>❌ No</td><td>❌ No</td></tr>
+            <tr><td>Create Property Manager</td><td>✅ Yes</td><td>❌ No</td><td>❌ No</td><td>❌ No</td></tr>
+            <tr><td>Create staff / concierge</td><td>✅ Yes</td><td>✅ Own condos only</td><td>❌ No</td><td>❌ No</td></tr>
+            <tr><td>Create / manage residents</td><td>✅ Yes</td><td>✅ Own condos only</td><td>❌ No</td><td>Self-register only</td></tr>
+            <tr><td>Create developer accounts</td><td>✅ Yes</td><td>❌ No</td><td>❌ No</td><td>❌ No</td></tr>
+            <tr><td>Reset user passwords</td><td>✅ Yes (all)</td><td>✅ Own condo users</td><td>❌ No</td><td>Self-service only</td></tr>
+            <tr><td>Adjust wallet balance</td><td>✅ Yes</td><td>✅ Own condos only</td><td>❌ No</td><td>❌ No</td></tr>
+            <tr><td>Export reports</td><td>✅ Yes (all)</td><td>✅ Own condos only</td><td>❌ No</td><td>❌ No</td></tr>
+            <tr><td>Force enable/disable user</td><td>✅ Yes</td><td>✅ Own condo users</td><td>❌ No</td><td>❌ No</td></tr>
+            <tr><td>Mark construction complete</td><td>✅ Yes</td><td>❌ No</td><td>❌ No</td><td>❌ No</td></tr>
+            <tr><td>Configure payment gateway</td><td>✅ Yes</td><td>✅ Own condos only</td><td>❌ No</td><td>❌ No</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ════ NEW PROPERTY ONBOARDING ════ -->
+    <section id="f-new-condo">
+      <h2><span class="num">4</span> Functional Flow: New Property Onboarding</h2>
+      <div class="actor-row"><span class="actor super">Super Admin</span></div>
+
+      <div class="fflow">
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Super Admin receives a new property onboarding request</h4>
+            <p>The property management company has signed up with iPlus Living. The Super Admin is given the property details — name, address, number of units, blocks, floors, preferred currency, and subscription package.</p>
+          </div>
+        </div>
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Create the condo record</h4>
+            <p>Super Admin opens the Condo section in the backend panel and clicks Create. They fill in: property name, full address, number of blocks, number of floors, number of units, currency (e.g. SGD), timezone (e.g. Asia/Singapore), and assigns a subscription package. The subscription start and end dates define when the condo's licence is valid.</p>
+          </div>
+        </div>
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Set the condo status</h4>
+            <p>If the building is occupied and ready to go live: set status to <span class="status s-active">Active</span>. If the building is still under construction: set status to "Under Construction" — this enables developer and contractor access while keeping resident features hidden.</p>
+          </div>
+        </div>
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Upload condo branding</h4>
+            <p>Upload the condo logo and configure home screen banner images that residents will see when they open the app. These are condo-specific — each property has its own visual identity.</p>
+          </div>
+        </div>
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Configure all condo settings</h4>
+            <p>Go to Condo Settings and configure the 100+ behaviour flags. The critical ones at this stage are: default language, payment gateway, password policy, booking auto-approval toggle, and any module name customisations. Settings can be changed later — they do not need to be perfect at creation time.</p>
+          </div>
+        </div>
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Assign roles to the condo</h4>
+            <p>Go to Condo Roles and link the global role definitions to this condo (e.g., activate "Staff", "Concierge Admin", "Resident" for this property). Only activated roles can be assigned to users of this condo.</p>
+          </div>
+        </div>
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Set permissions for each role</h4>
+            <p>For each role activated in this condo, define exactly which modules they can access and what they can do within each module. For example: Concierge can View and Add visitors, but cannot Delete or Approve facility bookings.</p>
+          </div>
+        </div>
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Create the Property Manager account</h4>
+            <p>Create the PM user account with name, email, and temporary password. Assign role_group = 5 (Property Manager). Link the PM to this condo. The PM receives login credentials and can now access the backend for their assigned condos only.</p>
+          </div>
+        </div>
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Hand over to the Property Manager</h4>
+            <p>The PM now handles the remaining setup: importing units, creating staff accounts, and guiding residents through registration. Super Admin's onboarding work is complete for this property.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════ UNITS & BLOCKS ════ -->
+    <section id="f-units">
+      <h2><span class="num">5</span> Functional Flow: Setting Up Units &amp; Blocks</h2>
+      <div class="actor-row"><span class="actor super">Super Admin</span><span class="actor pm">Property Manager</span></div>
+
+      <div class="callout info"><strong>Why this matters:</strong> Every resident, parking spot, booking, visitor, and service request is linked to a specific unit. Units must be set up correctly before any user can be assigned or any resident feature can work.</div>
+
+      <div class="fflow">
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Decide: manual entry or CSV import</h4>
+            <p>For small properties (under 50 units), admin may enter units manually. For large properties, CSV import is the standard approach. A blank CSV template can be downloaded from the backend.</p>
+          </div>
+        </div>
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Set up blocks (towers)</h4>
+            <p>Create each residential block or tower by name (e.g., "Tower A", "Block 3"). Each block gets a sort order for display. Carpark blocks are created separately if needed.</p>
+          </div>
+        </div>
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Define units under each block</h4>
+            <p>For each block: create units with unit name (e.g., "01-01"), floor number, and unit type. Unit types: Residential (standard apartment), Commercial (shop lot), Carpark (parking bay).</p>
+          </div>
+        </div>
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Map units to access controllers</h4>
+            <p>If the property has smart access (lift, door controllers): link each unit to the relevant controller zones. This determines which floors and doors a resident can access based on their unit. This mapping is done via the Access Mapping action.</p>
+          </div>
+        </div>
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Import purchase / owner data (optional)</h4>
+            <p>For new-launch properties: import the purchase price, buyer name, and ownership details per unit. This is used for key collection tracking and developer handover management.</p>
+          </div>
+        </div>
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Generate QR codes for units (optional)</h4>
+            <p>QR codes can be generated and printed for each unit. Used for: key collection confirmation scanning, visitor pre-registration by residents, and physical access at certain condos.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout warn">
+        <strong>Important:</strong> Unit names must match exactly what residents know their unit as (e.g., "#01-01" vs "01-01" vs "0101"). Mismatches cause registration failures when residents try to self-register using their unit number.
+      </div>
+    </section>
+
+    <!-- ════ CONSTRUCTION → LIVE ════ -->
+    <section id="f-construction">
+      <h2><span class="num">6</span> Functional Flow: Construction Mode → Going Live</h2>
+      <div class="actor-row"><span class="actor super">Super Admin</span></div>
+
+      <div class="grid2">
+        <div class="card amber">
+          <h4>While "Under Construction"</h4>
+          <ul>
+            <li>Resident-facing features are hidden / disabled</li>
+            <li>Developer (role_group=11) and contractor accounts have elevated access to: defect inspection checklists, key collection management, floor plan uploads, unit handover tracking</li>
+            <li>Residents can be pre-registered but cannot fully access the app</li>
+            <li>Property Manager can still configure the condo during this phase</li>
+          </ul>
+        </div>
+        <div class="card green">
+          <h4>When "Mark as Completed"</h4>
+          <ul>
+            <li>Super Admin clicks "Mark Construction as Completed" for the condo</li>
+            <li>Condo status changes to Active</li>
+            <li>Developer access is automatically reduced to view-only or removed</li>
+            <li>All resident-facing features activate: bookings, visitors, community wall, parcels, etc.</li>
+            <li>Residents who pre-registered can now fully use the app</li>
+            <li>This action is irreversible without Super Admin manually changing the status back</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════ BRANDING ════ -->
+    <section id="f-branding">
+      <h2><span class="num">7</span> Functional Flow: Branding &amp; Localisation</h2>
+      <div class="actor-row"><span class="actor super">Super Admin</span><span class="actor pm">Property Manager</span></div>
+
+      <div class="fflow">
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Customise module names</h4>
+            <p>Each condo can rename any module. Examples: "Facility Booking" → "Amenity Reservation", "Visitor Management" → "Guest Access", "Parcel" → "Delivery Locker". The custom name appears throughout the app for residents of that condo. All names support English and Chinese (zh-SG).</p>
+          </div>
+        </div>
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Customise role labels</h4>
+            <p>Role display names can be changed per condo. "Staff" can become "Concierge", "Property Manager" can become "Building Manager". These labels appear in notifications and user-facing screens.</p>
+          </div>
+        </div>
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Set default language</h4>
+            <p>Configure whether the condo defaults to English or Chinese (Simplified Singapore). Individual residents can override this in their profile settings, but the condo default is the starting language for all new users.</p>
+          </div>
+        </div>
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Configure home screen &amp; menu order</h4>
+            <p>Upload hero/banner images for the resident app's home screen. Drag-and-drop to set the display order of modules in the app's navigation menu. Modules can be completely hidden if the condo does not use them (e.g., hide "EAGM" if the condo doesn't use electronic AGM).</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════ ONBOARD PM ════ -->
+    <section id="f-pm">
+      <h2><span class="num">8</span> Functional Flow: Onboard a Property Manager</h2>
+      <div class="actor-row"><span class="actor super">Super Admin</span></div>
+
+      <div class="fflow">
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Receive PM details from the property management company</h4>
+            <p>Collect: full name, email address, phone number, and which condo(s) they will manage. One PM can manage multiple condos.</p>
+          </div>
+        </div>
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Create the PM user account</h4>
+            <p>In the User section, use the dedicated "Create PM" flow (not the general Create User). Set role_group = 5. Assign a temporary password — the PM should be asked to change it on first login.</p>
+          </div>
+        </div>
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Assign the PM to their condo(s)</h4>
+            <p>Link the PM's user account to each condo they will manage. From this point, the PM can log into the backend and will see only their assigned condos — never other companies' data.</p>
+          </div>
+        </div>
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>PM receives login credentials</h4>
+            <p>Send the PM their backend login URL, username, and temporary password. The PM logs in, changes their password, and begins managing their condo(s). Super Admin's role in this process is now complete.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout dark">
+        <strong>What a PM can and cannot do in the backend:</strong>
+        A PM can configure condo settings, create and manage users within their condos, adjust wallet balances, and export reports. A PM cannot create new condos, create roles, set global permissions, or access condos they are not assigned to.
+      </div>
+    </section>
+
+    <!-- ════ ONBOARD STAFF ════ -->
+    <section id="f-staff">
+      <h2><span class="num">9</span> Functional Flow: Onboard Staff &amp; Concierge</h2>
+      <div class="actor-row"><span class="actor super">Super Admin</span><span class="actor pm">Property Manager</span></div>
+
+      <div class="fflow">
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Determine the staff role</h4>
+            <p>Decide which role the new staff member will have: General Staff (role_group=2), Concierge Admin (role_group=6), or iPlus Concierge Staff (role_group=7). Each role has different permissions pre-configured in the Permission setup.</p>
+          </div>
+        </div>
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Create the user account</h4>
+            <p>Fill in: name, email, phone number, assign the correct role, assign to the correct condo. Set a temporary password. The staff member will use this to log into the frontend portal (not the backend).</p>
+          </div>
+        </div>
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Verify the permissions are correct for their role</h4>
+            <p>Check that the module permissions for their assigned role match what they need. For example: A concierge staff should be able to add visitors and view facility bookings, but should not be able to approve/reject bookings or access financial settings. If permissions need adjusting, update the role's permissions (this affects all users of that role in this condo).</p>
+          </div>
+        </div>
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Staff logs into the frontend portal</h4>
+            <p>The staff member receives their login URL (frontend portal, not backend) and credentials. They log in and see only the modules their role permits. Staff never access the backend admin panel.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="decision-block">
+        <h5>Decision: What role should the new staff member get?</h5>
+        <div class="decision-row">
+          <div class="decision-opt yes"><strong>✅ Concierge Admin</strong>Needs to approve visitors, manage parcels, handle bookings, coordinate access control</div>
+          <div class="decision-opt alt"><strong>◆ General Staff</strong>Needs read access to most things but limited write/approve abilities</div>
+          <div class="decision-opt no"><strong>⚙ iPlus Concierge Staff</strong>Contracted concierge team from iPlus — specific operational access only</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════ ONBOARD RESIDENT ════ -->
+    <section id="f-resident">
+      <h2><span class="num">10</span> Functional Flow: Onboard a Resident</h2>
+      <div class="actor-row"><span class="actor res">Resident</span><span class="actor pm">Property Manager</span><span class="actor super">Super Admin</span></div>
+
+      <div class="fflow">
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Resident downloads the iPlus Living app</h4>
+            <p>The resident downloads the app from App Store or Google Play. The condo admin shares the app name/link with residents via welcome letter or email blast.</p>
+          </div>
+        </div>
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Resident self-registers</h4>
+            <p>The resident enters their email, creates a password, and enters their unit number. The system verifies the unit number exists in the condo structure. On first login, if the condo has a tenancy agreement configured for residents, it is shown and must be accepted before proceeding.</p>
+          </div>
+        </div>
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Resident is linked to their unit</h4>
+            <p>The system automatically creates the user-unit mapping in the <code>user_condo</code> table. Multiple residents can share the same unit (e.g., owner + spouse + children). Each gets their own account but shares the unit reference.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="decision-block">
+        <h5>Alternative: Admin-created resident accounts</h5>
+        <div class="decision-row">
+          <div class="decision-opt yes"><strong>✅ Self-registration</strong>Standard for most properties. Resident does it themselves via the app. Zero admin effort.</div>
+          <div class="decision-opt alt"><strong>◆ Admin creation</strong>PM creates resident account manually in the backend. Used for elderly residents or when self-registration isn't working. PM sets a temporary password.</div>
+          <div class="decision-opt alt"><strong>◆ Bulk pre-load</strong>PM imports resident data via CSV before move-in day. Accounts are created and hidden until the resident activates them via email.</div>
+        </div>
+      </div>
+
+      <h3>Upgrading a Resident to Council Member</h3>
+      <p>When a resident is elected to the management council (MCST), a PM or Super Admin upgrades their role_group from 3 (Resident) to 1 (Council Member) in the backend. This immediately grants them access to council-specific features: voting, AGM management, financial reports, and council communications.</p>
+    </section>
+
+    <!-- ════ DEVELOPER / CONTRACTOR ════ -->
+    <section id="f-developer">
+      <h2><span class="num">11</span> Functional Flow: Onboard Developer &amp; Contractor</h2>
+      <div class="actor-row"><span class="actor super">Super Admin</span></div>
+
+      <div class="callout info"><strong>Context:</strong> This flow applies to new-launch properties where the building is still under construction. The property developer, main contractor, and sub-contractors need access to manage defect inspections, key collections, and handover activities.</div>
+
+      <div class="grid2">
+        <div class="card dark">
+          <h4>Property Developer (role_group = 11)</h4>
+          <ul>
+            <li>Created by Super Admin via the dedicated "Create Developer" flow</li>
+            <li>Developer creates Developer Staff accounts (role_group=12) under their umbrella</li>
+            <li>Developer access: defect inspection management, key collection tracking, floor plan uploads, unit handover status</li>
+            <li>Cannot access resident personal data, facility bookings, or community features</li>
+          </ul>
+        </div>
+        <div class="card grey">
+          <h4>Contractors (role_group 13–15)</h4>
+          <ul>
+            <li>Main Contractor (13): Manages rectification work</li>
+            <li>Main Contractor Staff (14): Field workers doing inspections</li>
+            <li>Sub Contractor (15): Specialist trades (plumbing, electrical)</li>
+            <li>Created via general Create User flow with appropriate role_group</li>
+            <li>Access limited to their assigned work orders and defect records</li>
+          </ul>
+        </div>
+        <div class="card amber full">
+          <h4>When Construction Completes</h4>
+          <ul>
+            <li>Super Admin marks the condo as construction-completed</li>
+            <li>Developer and contractor access is automatically reduced or removed</li>
+            <li>Resident features activate and residents can use the full app</li>
+            <li>All handover data (inspections, key collections, defects) is retained for historical reference</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════ ROLE DESIGN ════ -->
+    <section id="f-role-design">
+      <h2><span class="num">12</span> Functional Flow: Designing a Role</h2>
+      <div class="actor-row"><span class="actor super">Super Admin</span></div>
+
+      <div class="callout info"><strong>When to create a new role:</strong> The default role groups (Staff, Concierge Admin, etc.) cover most condos. Create a new role only when a specific type of user needs a distinctly different permission set that can't be achieved by adjusting an existing role's permissions.</div>
+
+      <div class="fflow">
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Identify the need</h4>
+            <p>A condo requests a "Security Supervisor" role that can approve vehicle registrations and view ANPR logs but cannot touch facility bookings or financial data. This is different enough from "Concierge Admin" that a new role makes sense.</p>
+          </div>
+        </div>
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Create the global role definition</h4>
+            <p>In the Role section, create a new role: set its name in English and Chinese, assign a role_group (which tier it belongs to — this determines its base access level), pick a display colour, and set sort order. A UUID is auto-generated as the unique identifier.</p>
+          </div>
+        </div>
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Set default permissions for the role</h4>
+            <p>Define what this role can do across all condos by default. These defaults can be overridden at the condo level later. Default permissions are useful when the same role is activated across many condos with the same behaviour.</p>
+          </div>
+        </div>
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Activate the role for the specific condo</h4>
+            <p>Go to Condo Roles for the relevant property and link this new role. It now appears as an assignable role for users in that condo.</p>
+          </div>
+        </div>
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Set condo-specific permission overrides</h4>
+            <p>Go to Role Permissions for this condo and configure exactly which modules this role can access in this specific property. These override the global defaults for this condo only.</p>
+          </div>
+        </div>
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Assign the role to users</h4>
+            <p>Now create user accounts and assign this new role. The user immediately gets the permissions configured for this role in this condo.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════ PERMISSION MATRIX ════ -->
+    <section id="f-perm-matrix">
+      <h2><span class="num">13</span> Permission Decision Matrix</h2>
+      <p>When configuring permissions for a role, each module has individual permission flags. Here is how to decide what each role type typically needs:</p>
+
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Module</th>
+              <th>Resident</th>
+              <th>Staff</th>
+              <th>Concierge Admin</th>
+              <th>Property Manager</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>Facility Booking</strong></td><td>View own + Book</td><td>View all</td><td>View all + Approve/Reject</td><td>View all + Approve/Reject + Cancel past</td></tr>
+            <tr><td><strong>Visitor Management</strong></td><td>Register own visitors</td><td>View all visitors</td><td>View + Add + Manage check-in/out</td><td>Full access</td></tr>
+            <tr><td><strong>Vehicle / ANPR</strong></td><td>Register own vehicle</td><td>View logs</td><td>View + Manage blacklist + Open gate</td><td>Full access + Approve vehicles</td></tr>
+            <tr><td><strong>Defect / Inspection</strong></td><td>Submit own defects</td><td>View all defects</td><td>View + Update status</td><td>Full access</td></tr>
+            <tr><td><strong>Parcel / Delivery</strong></td><td>View own parcels</td><td>Add + Update parcels</td><td>Full parcel management</td><td>Full access</td></tr>
+            <tr><td><strong>Community Wall</strong></td><td>Post + Comment</td><td>Moderate posts</td><td>Full moderation</td><td>Full access</td></tr>
+            <tr><td><strong>Financial / Payments</strong></td><td>View own payments</td><td>No access</td><td>View only</td><td>Full access</td></tr>
+            <tr><td><strong>Announcements</strong></td><td>View only</td><td>Create drafts</td><td>Create + Publish</td><td>Full access</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ════ CHANGING PERMISSIONS ════ -->
+    <section id="f-perm-change">
+      <h2><span class="num">14</span> Functional Flow: Changing Permissions</h2>
+      <div class="actor-row"><span class="actor super">Super Admin</span></div>
+
+      <div class="fflow">
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Identify the need</h4>
+            <p>Example: The condo requests that concierge staff should no longer be able to cancel bookings — only the Property Manager should have that ability.</p>
+          </div>
+        </div>
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Go to Role Permissions for the specific condo</h4>
+            <p>Navigate to the condo, then to Role Permissions. Find the "Concierge Admin" role and locate the "Facility Booking" module permissions.</p>
+          </div>
+        </div>
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Update the permission flag</h4>
+            <p>Uncheck the "Delete" permission (which controls cancellation in this context). Save the changes. The system immediately clears all relevant caches.</p>
+          </div>
+        </div>
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Effect is immediate</h4>
+            <p>All users with the Concierge Admin role in this condo lose the cancel booking ability on their next page load. They do not need to log out and back in — the cache invalidation is instant. Users currently logged in will see the change on their next page navigation.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout warn">
+        <strong>Important: Permissions are role-level, not user-level.</strong>
+        Changing a permission for a role affects ALL users with that role in that condo simultaneously. If you need to give one specific user different permissions from their colleagues, you need to either create a new role just for them or use individual permission overrides via UserinfoController.
+      </div>
+    </section>
+
+    <!-- ════ ACCOUNT ISSUES ════ -->
+    <section id="f-account-issues">
+      <h2><span class="num">15</span> Functional Flow: Account Issues &amp; Fixes</h2>
+      <div class="actor-row"><span class="actor super">Super Admin</span><span class="actor pm">Property Manager</span></div>
+
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Problem</th><th>Who Fixes It</th><th>Action</th><th>Outcome</th></tr></thead>
+          <tbody>
+            <tr><td>Resident forgot password</td><td>Resident (self-service) or PM</td><td>"Forgot Password" in the app OR PM uses Change User Password in backend</td><td>Reset email sent or new password set</td></tr>
+            <tr><td>Account locked after failed logins</td><td>PM or Super Admin</td><td>Click "Unblock User" in the backend for that user</td><td>Account unlocked immediately — user can log in</td></tr>
+            <tr><td>Staff member left, account must be deactivated</td><td>PM</td><td>Force Disable the user account</td><td>Account disabled — user cannot log in, existing data preserved</td></tr>
+            <tr><td>Resident moved out</td><td>PM</td><td>Change user-condo status to Inactive / cancel unit mapping</td><td>Resident loses access to condo features, app shows no condo data</td></tr>
+            <tr><td>Wrong role assigned to a user</td><td>PM or Super Admin</td><td>Update the user record and change role assignment</td><td>User's permissions change immediately on next login</td></tr>
+            <tr><td>New condo manager hired</td><td>Super Admin</td><td>Create new PM account, assign to condo. Optionally deactivate old PM.</td><td>New PM has backend access within minutes</td></tr>
+            <tr><td>Force all staff to reset passwords</td><td>Super Admin</td><td>Enable "Force Password Reset" for role_group=2 in Condo Settings</td><td>All staff in that condo must change password on next login</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ════ PAYMENT CONFIG ════ -->
+    <section id="f-payment-config">
+      <h2><span class="num">16</span> Functional Flow: Payment Configuration</h2>
+      <div class="actor-row"><span class="actor super">Super Admin</span><span class="actor pm">Property Manager</span></div>
+
+      <div class="fflow">
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Choose the payment gateway</h4>
+            <p>In Condo Settings, set the <code>payment_type</code>. Options: <strong>Stripe</strong> (credit/debit cards, international), <strong>BrainTree</strong> (PayPal and cards), <strong>PayLah</strong> (Singapore DBS wallet), <strong>Manual</strong> (cash/bank transfer, no online processing), <strong>Wallet</strong> (iPlus in-app wallet only). Only one gateway is active at a time per condo.</p>
+          </div>
+        </div>
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Decide who bears the payment processing fee</h4>
+            <p>For Stripe: enable or disable "Condo Bears Stripe Handling Fee". If enabled, the condo absorbs the Stripe processing percentage. If disabled, the handling fee is added on top of what the resident pays. This affects the amount shown to residents at checkout.</p>
+          </div>
+        </div>
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Configure manual payment instructions (if applicable)</h4>
+            <p>If Manual Payment is allowed as an option on any facility: set the <code>customise_manual_payment</code> label (e.g., rename "Manual Payment" to "Bank Transfer") and configure the payment instructions text shown to residents (<code>menual_payment_message</code>).</p>
+          </div>
+        </div>
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Configure wallet settings (if using in-app wallet)</h4>
+            <p>Set minimum top-up amounts, maximum balance limits, and whether wallet can be used alongside other payment methods or is the sole method.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════ HOUSE RULES ════ -->
+    <section id="f-agreement">
+      <h2><span class="num">17</span> Functional Flow: House Rules &amp; Tenancy Agreement</h2>
+      <div class="actor-row"><span class="actor super">Super Admin</span><span class="actor pm">Property Manager</span></div>
+
+      <div class="fflow">
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Prepare the house rules document</h4>
+            <p>The property management company provides the house rules or tenancy agreement as a PDF or formatted HTML. This document is what residents must agree to before using the app.</p>
+          </div>
+        </div>
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Configure which roles must accept the agreement</h4>
+            <p>In Condo Roles, for each role, configure the activation permission: "Must Accept Agreement = Yes/No". Typically residents (role_group=3) must accept; staff (role_group=2) usually do not. Council members may or may not depending on condo policy.</p>
+          </div>
+        </div>
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Upload the agreement document</h4>
+            <p>Link the agreement document to the condo. The agreement is shown in-app as a scrollable document. The resident must scroll to the bottom and tap "I Agree" before they can proceed to use the app.</p>
+          </div>
+        </div>
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>When the agreement is updated</h4>
+            <p>If house rules change: upload the new version of the document. The system detects a new version and forces all applicable users to re-accept on their next login — even if they accepted the previous version. Their acceptance is tracked individually.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════ MODULE BEHAVIOUR ════ -->
+    <section id="f-module-config">
+      <h2><span class="num">18</span> Functional Flow: Module Behaviour Configuration</h2>
+      <div class="actor-row"><span class="actor super">Super Admin</span><span class="actor pm">Property Manager</span></div>
+
+      <div class="grid2">
+        <div class="card purple">
+          <h4>Facility Booking Behaviour</h4>
+          <ul>
+            <li><strong>Auto-approve:</strong> Toggle whether bookings need staff approval or are confirmed instantly</li>
+            <li><strong>Booking note label:</strong> Rename the "Booking Notes" field to something condo-specific</li>
+            <li><strong>Cancellation message:</strong> Set the message shown when a resident tries to cancel a past-due booking</li>
+            <li><strong>Manual payment label:</strong> Rename "Manual Payment" to match how the condo collects offline payments</li>
+          </ul>
+        </div>
+        <div class="card blue">
+          <h4>ANPR / Vehicle Behaviour</h4>
+          <ul>
+            <li><strong>Overstay threshold:</strong> Minutes after which a parked vehicle is flagged as overstaying (set per camera)</li>
+            <li><strong>Operating hours:</strong> Time window within which overstay detection runs</li>
+            <li><strong>Face enrollment:</strong> Enable/disable Hikvision face ID enrollment for residents</li>
+            <li><strong>Camera credentials:</strong> IP, port, username, password for each ANPR camera</li>
+          </ul>
+        </div>
+        <div class="card green">
+          <h4>Authentication Behaviour</h4>
+          <ul>
+            <li><strong>OTP / 2FA:</strong> Enable one-time password requirement on login</li>
+            <li><strong>Session timeout:</strong> Auto-logout after X minutes of inactivity</li>
+            <li><strong>Force password reset:</strong> Make specific role groups reset their password on next login</li>
+            <li><strong>Password complexity:</strong> Set minimum length and character requirements</li>
+          </ul>
+        </div>
+        <div class="card amber">
+          <h4>Communication Behaviour</h4>
+          <ul>
+            <li><strong>Email server:</strong> Configure SMTP settings for condo-specific email sending</li>
+            <li><strong>Notification preferences:</strong> Which events trigger push notifications to which roles</li>
+            <li><strong>SFTP:</strong> Set up file sync for document exchange with external systems</li>
+            <li><strong>Language:</strong> Default language for all system-generated messages</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════ BULK OPS ════ -->
+    <section id="f-bulk-ops">
+      <h2><span class="num">19</span> Functional Flow: Bulk Data Operations</h2>
+      <div class="actor-row"><span class="actor super">Super Admin</span><span class="actor pm">Property Manager</span></div>
+
+      <div class="fflow">
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Download the CSV template</h4>
+            <p>From the Condo section, download the blank CSV template for the type of data to be imported (units, vehicles, inspections, etc.). Templates define the exact column headers and format required.</p>
+          </div>
+        </div>
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Fill in the data</h4>
+            <p>Populate the CSV with the data. Common pitfalls: date formats (use the format shown in the template), unit names must match exactly what is in the system, vehicle plate numbers must be in the correct format without spaces.</p>
+          </div>
+        </div>
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Upload and process</h4>
+            <p>Upload the CSV via the import action for that data type. The system validates the file (MIME type check — only CSV/Excel formats accepted). Rows with missing required fields are skipped. The system returns a success count and a list of skipped rows with reasons.</p>
+          </div>
+        </div>
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Verify imported data</h4>
+            <p>After import, navigate to the relevant section (units list, vehicle list, etc.) and confirm the data has been loaded correctly. Spot-check a few records for accuracy before notifying the client that setup is complete.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid2">
+        <div class="card teal">
+          <h4>What CAN be bulk imported</h4>
+          <ul>
+            <li>Units (block, floor, unit name, unit type)</li>
+            <li>Unit purchase details (price, buyer, owner)</li>
+            <li>Unit QR codes</li>
+            <li>Resident vehicles (plate, IU, vehicle type)</li>
+            <li>Inspection / defect checklist templates</li>
+            <li>Notification and document templates</li>
+          </ul>
+        </div>
+        <div class="card red">
+          <h4>What CANNOT be bulk imported</h4>
+          <ul>
+            <li>User accounts / resident registrations (must self-register or be created individually)</li>
+            <li>Role and permission definitions (manual configuration only)</li>
+            <li>Payment transactions (cannot be bulk-injected)</li>
+            <li>ANPR parking logs (received from hardware in real-time only)</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════ EXPORTS ════ -->
+    <section id="f-exports">
+      <h2><span class="num">20</span> Functional Flow: Reporting &amp; Exports</h2>
+      <div class="actor-row"><span class="actor super">Super Admin</span><span class="actor pm">Property Manager</span></div>
+
+      <p>The backend provides several export functions for reporting and data extraction. All exports produce CSV files downloadable in the browser.</p>
+
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Report</th><th>Who Uses It</th><th>Typical Use Case</th></tr></thead>
+          <tbody>
+            <tr><td>Condo List Export</td><td>Super Admin</td><td>Monthly subscription audit — check which condos are active, near expiry, or expired</td></tr>
+            <tr><td>Condo Users Export</td><td>Super Admin / PM</td><td>Full user roster for a condo — used for auditing who has access</td></tr>
+            <tr><td>Wallet Balance Export</td><td>PM</td><td>Monthly financial reconciliation of in-app wallet balances</td></tr>
+            <tr><td>Key Collection Data</td><td>Super Admin / Developer</td><td>Track which units have collected their keys during property handover</td></tr>
+            <tr><td>Payment Process Data</td><td>PM / Finance</td><td>Export all payment transactions for accounting reconciliation</td></tr>
+            <tr><td>Floor Plan Data</td><td>Developer / PM</td><td>Export list of units with associated floor plan documents</td></tr>
+            <tr><td>Wall / Forum Data</td><td>PM</td><td>Community post export for content moderation or historical records</td></tr>
+            <tr><td>Data Clean Export</td><td>Super Admin</td><td>Pre-migration data cleansing — export cleaned dataset for archiving or moving to another system</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ════ WALLET ════ -->
+    <section id="f-wallet">
+      <h2><span class="num">21</span> Functional Flow: Wallet Management</h2>
+      <div class="actor-row"><span class="actor super">Super Admin</span><span class="actor pm">Property Manager</span></div>
+
+      <div class="fflow">
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Resident reports a wallet issue</h4>
+            <p>Common situations: payment was made but wallet was not credited, a failed top-up deducted money but didn't add balance, or a refund should be issued as wallet credit.</p>
+          </div>
+        </div>
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>PM investigates the transaction history</h4>
+            <p>Use the wallet balance export or payment process export to see the transaction history for the affected user and identify the discrepancy.</p>
+          </div>
+        </div>
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Adjust the wallet balance manually</h4>
+            <p>In the user's account settings (backend), PM or Super Admin uses the "Change User Balance" function to add or subtract the correct amount. A reason/note should be recorded. The change is logged as a transaction for audit trail.</p>
+          </div>
+        </div>
+        <div class="fflow-step">
+          <div class="fflow-body">
+            <h4>Notify the resident</h4>
+            <p>The system automatically sends a wallet update notification to the resident's device. PM may also follow up directly to confirm the issue is resolved.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════ BUSINESS RULES SUMMARY ════ -->
+    <section id="rules-summary">
+      <h2><span class="num">22</span> Key Business Rules Summary</h2>
+
+      <div class="grid2">
+        <div class="card purple">
+          <h4>Condo Rules</h4>
+          <ul>
+            <li>A condo must have at least one Property Manager assigned before residents can be served effectively</li>
+            <li>Condo status determines what is accessible — Under Construction blocks resident features</li>
+            <li>Subscription dates define the licence window — expired condos lose access to the platform</li>
+            <li>All condo settings can be changed at any time without affecting historical data</li>
+          </ul>
+        </div>
+        <div class="card blue">
+          <h4>User Rules</h4>
+          <ul>
+            <li>Every user must be assigned to at least one condo to have any functional access</li>
+            <li>A user can be assigned to multiple condos (e.g., a PM managing 5 properties)</li>
+            <li>Deleting a user is a soft delete — data is retained, access is revoked</li>
+            <li>A resident can share a unit with other users — unit has many users, user can belong to one unit per condo</li>
+          </ul>
+        </div>
+        <div class="card green">
+          <h4>Role &amp; Permission Rules</h4>
+          <ul>
+            <li>Global roles must be activated per condo before users can be assigned that role in that condo</li>
+            <li>Permissions are role-level, not user-level — changing a role affects all users of that role</li>
+            <li>Condo-level permissions override global role defaults</li>
+            <li>Permission changes take effect on the user's next page load — no logout required</li>
+          </ul>
+        </div>
+        <div class="card amber">
+          <h4>Payment Rules</h4>
+          <ul>
+            <li>Only one payment gateway is active per condo at any time</li>
+            <li>Changing the payment gateway does not affect historical transactions</li>
+            <li>Manual payment mode requires staff to manually confirm receipt — it is not automated</li>
+            <li>Wallet balance is tracked per user per condo — the same user in two condos has two separate balances</li>
+          </ul>
+        </div>
+        <div class="card dark">
+          <h4>Data Rules</h4>
+          <ul>
+            <li>Sensitive data (email, phone, plate numbers) is AES-encrypted in the database</li>
+            <li>All admin user credentials (super admin panel accounts) are separately encrypted in the <code>adminuser</code> table</li>
+            <li>Role changes are always audit-logged in <code>iliving_sync_data</code> — creation, updates, and deletes</li>
+            <li>CSV imports skip invalid rows silently — always verify imported data after upload</li>
+          </ul>
+        </div>
+        <div class="card red">
+          <h4>Irreversible Actions</h4>
+          <ul>
+            <li>"Mark Construction Completed" — cannot be undone without manual status change by Super Admin</li>
+            <li>Subscription end date passing — condo access is cut off; must be manually renewed</li>
+            <li>Wallet balance adjustments — manually logged, no automated rollback</li>
+            <li>Permission cache cleared on every role save — cannot be selectively cleared for one user</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════ DECISION TREES ════ -->
+    <section id="decision-trees">
+      <h2><span class="num">23</span> Decision Trees</h2>
+
+      <h3>Decision: Who should create this user account?</h3>
+      <div class="decision-block">
+        <h5>Identify the user type being created</h5>
+        <div class="decision-row">
+          <div class="decision-opt yes"><strong>✅ Property Manager</strong>Super Admin must create this — PMs cannot create other PMs</div>
+          <div class="decision-opt alt"><strong>◆ Staff / Concierge</strong>PM or Super Admin can create this in the backend</div>
+          <div class="decision-opt alt"><strong>◆ Resident</strong>Resident self-registers via app, OR PM creates manually, OR bulk import</div>
+          <div class="decision-opt no"><strong>⚙ Developer / Contractor</strong>Super Admin must create — requires role_groups 11–15</div>
+        </div>
+      </div>
+
+      <h3>Decision: Should I create a new role or adjust an existing role's permissions?</h3>
+      <div class="decision-block">
+        <h5>Ask: Is this user genuinely different from ALL existing role types?</h5>
+        <div class="decision-row">
+          <div class="decision-opt yes"><strong>✅ Yes — Create new role</strong>The user needs a unique combination of permissions that no existing role has. Example: "Security Supervisor" needs ANPR access but not booking management.</div>
+          <div class="decision-opt no"><strong>❌ No — Adjust permissions</strong>An existing role is close enough. Go to Role Permissions for the condo and tweak the permission flags for that role. Faster and simpler.</div>
+        </div>
+      </div>
+
+      <h3>Decision: What to do when a staff member leaves?</h3>
+      <div class="decision-block">
+        <h5>Will this user's account ever be needed again?</h5>
+        <div class="decision-row">
+          <div class="decision-opt no"><strong>Permanent departure</strong>Force Disable the account. Data is preserved for audit history. Account cannot be used to log in. If the account will never be reactivated, you may also change the email to a placeholder so the email can be reused for a new hire.</div>
+          <div class="decision-opt alt"><strong>Temporary (leave of absence)</strong>Force Disable the account. When the employee returns, Force Enable to restore access. No data is lost, permissions remain intact.</div>
+        </div>
+      </div>
+
+      <h3>Decision: Resident cannot self-register — what is the problem?</h3>
+      <div class="decision-block">
+        <h5>What error is the resident seeing?</h5>
+        <div class="decision-row">
+          <div class="decision-opt no"><strong>"Unit not found"</strong>Unit name mismatch. Check how the unit is stored in the system vs what the resident typed. May be a format issue (#01-01 vs 01-01).</div>
+          <div class="decision-opt alt"><strong>"Email already registered"</strong>Someone already registered with that email. Check if the account exists and if it's linked to the correct unit.</div>
+          <div class="decision-opt yes"><strong>App not loading</strong>May be a condo status issue — check if the condo is set to "Under Construction" which blocks resident app access.</div>
+          <div class="decision-opt alt"><strong>Agreement not appearing</strong>Check if tenancy agreement is configured for the resident role in Condo Roles. If not configured, the agreement step is skipped.</div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+</body>
+</html>
