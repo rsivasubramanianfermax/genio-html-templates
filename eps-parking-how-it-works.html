@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>EPS Parking — How It Works</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue:    #1B4FD8;
+      --blue-lt: #EEF2FF;
+      --green:   #0F9C60;
+      --green-lt:#ECFDF5;
+      --red:     #DC2626;
+      --red-lt:  #FEF2F2;
+      --amber:   #D97706;
+      --amber-lt:#FFFBEB;
+      --orange:  #EA580C;
+      --orange-lt:#FFF7ED;
+      --gray:    #64748B;
+      --gray-lt: #F8FAFC;
+      --border:  #E2E8F0;
+      --text:    #1E293B;
+      --heading: #0F172A;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: var(--text);
+      background: #F1F5F9;
+      line-height: 1.6;
+    }
+
+    /* ── HEADER ── */
+    .page-header {
+      background: linear-gradient(135deg, #0F172A 0%, #EA580C 100%);
+      color: #fff;
+      padding: 48px 60px 40px;
+    }
+    .page-header .badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1.2px;
+      padding: 4px 14px;
+      margin-bottom: 18px;
+      text-transform: uppercase;
+    }
+    .page-header h1 { font-size: 38px; font-weight: 800; line-height: 1.15; margin-bottom: 12px; }
+    .page-header p  { font-size: 16px; opacity: 0.8; max-width: 640px; }
+
+    /* ── LAYOUT ── */
+    .container { max-width: 1100px; margin: 0 auto; padding: 48px 24px; }
+
+    /* ── SECTION HEADERS ── */
+    .section-label {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 11px; font-weight: 700; letter-spacing: 1.4px;
+      text-transform: uppercase; color: var(--orange);
+      margin-bottom: 8px;
+    }
+    .section-label::before {
+      content: ''; display: block; width: 28px; height: 2px; background: var(--orange);
+    }
+    h2 { font-size: 24px; font-weight: 700; color: var(--heading); margin-bottom: 24px; }
+    h3 { font-size: 16px; font-weight: 700; color: var(--heading); margin-bottom: 10px; }
+
+    /* ── CARDS ── */
+    .card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 28px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.04);
+    }
+
+    /* ── WHAT IS ── */
+    .what-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-top: 8px;
+    }
+    @media(max-width:680px){ .what-grid { grid-template-columns: 1fr; } }
+
+    .what-item {
+      display: flex; gap: 14px; align-items: flex-start;
+      background: var(--gray-lt);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px 20px;
+    }
+    .what-item .icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: var(--orange-lt); display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; font-size: 20px;
+    }
+    .what-item p { font-size: 14px; color: var(--gray); margin-top: 4px; }
+
+    /* ── FLOW DIAGRAM ── */
+    .flow {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+    .flow-step {
+      display: flex;
+      gap: 0;
+      position: relative;
+    }
+    .flow-left {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 56px;
+      flex-shrink: 0;
+    }
+    .step-circle {
+      width: 40px; height: 40px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 15px; color: #fff;
+      flex-shrink: 0; z-index: 1;
+    }
+    .step-line {
+      width: 2px;
+      flex: 1;
+      min-height: 24px;
+      background: var(--border);
+      margin: 0 auto;
+    }
+    .flow-step:last-child .step-line { display: none; }
+
+    .flow-body {
+      flex: 1;
+      padding: 0 0 28px 16px;
+    }
+    .flow-body .title {
+      font-weight: 700; font-size: 15px; color: var(--heading);
+      margin-bottom: 6px; margin-top: 8px;
+    }
+    .flow-body .desc { font-size: 14px; color: var(--gray); margin-bottom: 10px; }
+    .flow-body .detail-box {
+      background: var(--gray-lt);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 13px;
+      color: var(--text);
+    }
+    .flow-body .detail-box code {
+      background: #E2E8F0;
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 12px;
+      font-family: "Fira Code", "Courier New", monospace;
+      color: var(--orange);
+    }
+    .tag {
+      display: inline-block;
+      border-radius: 5px;
+      font-size: 11px; font-weight: 600;
+      padding: 2px 8px;
+      margin: 2px 2px 2px 0;
+    }
+    .tag-blue   { background: var(--blue-lt);  color: var(--blue); }
+    .tag-green  { background: var(--green-lt); color: var(--green); }
+    .tag-red    { background: var(--red-lt);   color: var(--red); }
+    .tag-amber  { background: var(--amber-lt); color: var(--amber); }
+    .tag-orange { background: var(--orange-lt);color: var(--orange); }
+
+    /* ── ACTORS ── */
+    .actors-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    @media(max-width:680px){ .actors-grid { grid-template-columns: 1fr; } }
+    .actor-card {
+      border-radius: 12px;
+      padding: 20px 22px;
+      border: 1px solid transparent;
+    }
+    .actor-card .icon { font-size: 28px; margin-bottom: 10px; }
+    .actor-card p { font-size: 13px; margin-top: 6px; }
+    .ac-blue   { background: var(--blue-lt);   border-color: #C7D7F9; color: var(--blue); }
+    .ac-green  { background: var(--green-lt);  border-color: #A7F3D0; color: var(--green); }
+    .ac-amber  { background: var(--amber-lt);  border-color: #FCD68A; color: var(--amber); }
+    .ac-red    { background: var(--red-lt);    border-color: #FECACA; color: var(--red); }
+    .ac-orange { background: var(--orange-lt); border-color: #FED7AA; color: var(--orange); }
+    .ac-gray   { background: var(--gray-lt);   border-color: var(--border); color: var(--gray); }
+
+    /* ── ACTION TYPES ── */
+    .vtype-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+    @media(max-width:680px){ .vtype-grid { grid-template-columns: 1fr 1fr; } }
+    .vtype-card {
+      text-align: center; padding: 18px 12px;
+      background: var(--gray-lt); border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+    .vtype-card .emoji { font-size: 30px; margin-bottom: 8px; }
+    .vtype-card .name  { font-size: 13px; font-weight: 600; color: var(--heading); }
+    .vtype-card .sub   { font-size: 11px; color: var(--gray); margin-top: 2px; }
+
+    /* ── DB TABLE ── */
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead th {
+      background: var(--orange); color: #fff;
+      padding: 10px 14px; text-align: left; font-weight: 600;
+    }
+    thead th:first-child { border-radius: 8px 0 0 0; }
+    thead th:last-child  { border-radius: 0 8px 0 0; }
+    tbody tr:nth-child(even) { background: var(--gray-lt); }
+    tbody td { padding: 9px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    tbody td code {
+      background: #E2E8F0; border-radius: 4px;
+      padding: 1px 5px; font-size: 11px;
+      font-family: "Fira Code", "Courier New", monospace;
+      color: var(--orange);
+    }
+    .pill {
+      display: inline-block; border-radius: 20px; font-size: 11px;
+      font-weight: 600; padding: 2px 9px;
+    }
+    .pill-blue   { background: var(--blue-lt);  color: var(--blue); }
+    .pill-green  { background: var(--green-lt); color: var(--green); }
+    .pill-red    { background: var(--red-lt);   color: var(--red); }
+    .pill-amber  { background: var(--amber-lt); color: var(--amber); }
+    .pill-orange { background: var(--orange-lt);color: var(--orange); }
+
+    /* ── ARCH TREE ── */
+    .arch-tree {
+      font-family: "Fira Code", "Courier New", monospace;
+      font-size: 12.5px;
+      background: var(--gray-lt);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px 24px;
+      white-space: pre;
+      overflow-x: auto;
+      color: var(--text);
+      line-height: 1.7;
+    }
+    .arch-tree .h { color: var(--orange); font-weight: 700; }
+
+    /* ── SECURITY ── */
+    .security-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+    }
+    @media(max-width:680px){ .security-grid { grid-template-columns: 1fr; } }
+    .sec-item {
+      border-left: 4px solid;
+      padding: 14px 16px;
+      border-radius: 0 8px 8px 0;
+      background: var(--gray-lt);
+    }
+    .sec-item h4 { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+    .sec-item p  { font-size: 13px; color: var(--gray); }
+    .sec-item.blue   { border-color: var(--blue); }
+    .sec-item.green  { border-color: var(--green); }
+    .sec-item.red    { border-color: var(--red); }
+    .sec-item.amber  { border-color: var(--amber); }
+    .sec-item.orange { border-color: var(--orange); }
+
+    /* ── NOTIFICATION ── */
+    .notif-row {
+      display: flex; align-items: flex-start; gap: 14px;
+      padding: 14px 0; border-bottom: 1px solid var(--border);
+    }
+    .notif-row:last-child { border-bottom: none; }
+    .notif-icon {
+      width: 36px; height: 36px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; font-size: 16px;
+    }
+    .notif-row .text p { font-size: 13px; color: var(--gray); margin-top: 3px; }
+
+    /* ── COMPARISON ── */
+    .compare-table td:first-child { font-weight: 600; color: var(--heading); white-space: nowrap; }
+
+    /* ── FOOTER ── */
+    .page-footer {
+      background: var(--heading); color: rgba(255,255,255,0.5);
+      text-align: center; padding: 24px;
+      font-size: 12px;
+    }
+
+    /* ── DIVIDER ── */
+    .section-divider { height: 40px; }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════ HEADER ════════════════════════════════════════ -->
+<div class="page-header">
+  <div class="badge">iplus Living — Technical Reference</div>
+  <h1>EPS Parking — How It Works</h1>
+  <p>How iplus integrates with the EPS (Electronic Parking System) — webhook-based vehicle entry/exit detection, quota &amp; blacklist enforcement, overstay alerts, and visitor parking management.</p>
+</div>
+
+<div class="container">
+
+  <!-- ═══ WHAT IS IT ═══ -->
+  <div class="section-label">Overview</div>
+  <h2>What is EPS Parking?</h2>
+
+  <div class="card">
+    <p style="font-size:15px; margin-bottom:20px;">
+      <strong>EPS (Electronic Parking System)</strong> is one of three parallel parking-camera integrations in iplus (alongside Hikvision LPR and MHI). EPS cameras/sensors at the carpark entry/exit detect a vehicle's license plate and call a <strong>webhook</strong> on iplus. iplus then validates the plate against blacklists and quotas, logs the entry/exit, and fires configurable notifications to residents, visitors, and staff.
+    </p>
+    <div class="what-grid">
+      <div class="what-item">
+        <div class="icon">📷</div>
+        <div>
+          <h3>Webhook is the transport</h3>
+          <p>The EPS hardware/camera POSTs plate detections directly to iplus's public API (<code>/api/eps/epsparkingadd</code>) — no MQTT or polling involved.</p>
+        </div>
+      </div>
+      <div class="what-item">
+        <div class="icon">🚦</div>
+        <div>
+          <h3>Quota enforcement</h3>
+          <p>Each condo configures how many resident and visitor vehicles are allowed at once (<code>eps_resident_vehicle_allow</code>, <code>eps_visitor_vehicle_allow</code>) — exceeding it alerts staff.</p>
+        </div>
+      </div>
+      <div class="what-item">
+        <div class="icon">⏱️</div>
+        <div>
+          <h3>Overstay &amp; pre-overstay alerts</h3>
+          <p>Vehicles that stay beyond a configured duration are flagged (<code>is_overstay</code>), with optional "X minutes before" pre-warnings to residents and visitors.</p>
+        </div>
+      </div>
+      <div class="what-item">
+        <div class="icon">🌙</div>
+        <div>
+          <h3>Daily reset</h3>
+          <p>A scheduled DB event (<code>eps_remove_vehicle</code>) runs daily to reset counters and clear stale provisional entries per <code>eps_reset_time</code>.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- ═══ WHO IS INVOLVED ═══ -->
+  <div class="section-label">Actors</div>
+  <h2>Who is Involved?</h2>
+
+  <div class="card">
+    <div class="actors-grid">
+      <div class="actor-card ac-orange">
+        <div class="icon">📷</div>
+        <h3>EPS Camera / Sensor (Hardware)</h3>
+        <p>Carpark entry/exit camera that detects license plates and POSTs the result to iplus's webhook in real time.</p>
+      </div>
+      <div class="actor-card ac-blue">
+        <div class="icon">🌐</div>
+        <h3>iplus Webhook API</h3>
+        <p>Public, unauthenticated endpoints (<code>/api/eps/...</code>) that receive plate detections and trigger stored procedures for validation and logging.</p>
+      </div>
+      <div class="actor-card ac-green">
+        <div class="icon">🏠</div>
+        <h3>Resident</h3>
+        <p>Gets notified when an invited visitor's vehicle arrives, when their own vehicle overstays, and can view parking history in the app.</p>
+      </div>
+      <div class="actor-card ac-amber">
+        <div class="icon">👤</div>
+        <h3>Visitor</h3>
+        <p>Receives email confirmation/notifications when their pass is issued, when they arrive, and on overstay — based on driver email captured at entry.</p>
+      </div>
+      <div class="actor-card ac-red">
+        <div class="icon">🛡️</div>
+        <h3>Staff / Security</h3>
+        <p>Notified on blacklist hits, overstays, repeated vehicles, quota breaches, and unregistered vehicles exceeding grace period. Can manually mark vehicles as "out".</p>
+      </div>
+      <div class="actor-card ac-gray">
+        <div class="icon">🏢</div>
+        <h3>Property Management</h3>
+        <p>Configures EPS settings per condo via <code>EpssettingController</code> — quotas, time ranges, notification templates, staff role mappings.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- ═══ STEP BY STEP FLOW ═══ -->
+  <div class="section-label">End-to-End Flow</div>
+  <h2>How a Vehicle Entry/Exit is Processed — Step by Step</h2>
+
+  <div class="card">
+    <div class="flow">
+
+      <!-- STEP 1 -->
+      <div class="flow-step">
+        <div class="flow-left">
+          <div class="step-circle" style="background:var(--orange);">1</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="flow-body">
+          <div class="title">Condo configures EPS settings</div>
+          <div class="desc">Property management sets up quotas, operating hours, overstay durations, and notification templates/recipients before go-live.</div>
+          <div class="detail-box">
+            Backend: <code>backend/controllers/EpssettingController.php</code><br/>
+            Table: <code>eps_setting</code> — per-condo config: <code>eps_resident_vehicle_allow</code>, <code>eps_visitor_vehicle_allow</code>, <code>eps_start_time_range</code>/<code>eps_end_time_range</code>, <code>eps_repeated_vehicle_time</code>, <code>eps_reset_time</code>, staff role lists + message templates per event type
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 2 -->
+      <div class="flow-step">
+        <div class="flow-left">
+          <div class="step-circle" style="background:var(--orange);">2</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="flow-body">
+          <div class="title">Vehicle approaches — camera detects plate</div>
+          <div class="desc">The EPS camera reads the plate number and immediately POSTs the detection to iplus.</div>
+          <div class="detail-box">
+            Webhook: <code>POST /api/eps/epsparkingadd</code><br/>
+            File: <code>api/controllers/EpsController.php</code><br/>
+            Payload: <code>condoId</code>, <code>unitId</code> (optional), <code>plate_no</code><br/>
+            Response codes: <span class="tag tag-green">200 = Success</span> &nbsp; <span class="tag tag-amber">301 = Plate already added</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 3 -->
+      <div class="flow-step">
+        <div class="flow-left">
+          <div class="step-circle" style="background:var(--orange);">3</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="flow-body">
+          <div class="title">Plate is checked against the blacklist</div>
+          <div class="desc">Before logging the entry, the plate number is checked against the condo's blacklist.</div>
+          <div class="detail-box">
+            Table: <code>eps_parking_black_list</code> — condo_id, unit_id (optional), plate_no<br/>
+            If matched → <code>eps_parking_log.is_under_black_list = 1</code> and staff are alerted via <code>staff_list_for_black_list_vehicle</code> / <code>staff_message_for_black_list_vehicle</code>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 4 -->
+      <div class="flow-step">
+        <div class="flow-left">
+          <div class="step-circle" style="background:var(--orange);">4</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="flow-body">
+          <div class="title">Quota &amp; repeated-vehicle checks run</div>
+          <div class="desc">The system checks how many resident/visitor vehicles are currently inside, and whether this plate has entered recently.</div>
+          <div class="detail-box">
+            Quota: count of currently-parked vehicles by <code>ref_type</code> (1=resident, 2=visitor) compared against <code>eps_resident_vehicle_allow</code> / <code>eps_visitor_vehicle_allow</code><br/>
+            If full → notify staff (<code>staff_list_for_invited_visitor_exceeding</code>)<br/>
+            Repeated check: same plate seen again within <code>eps_repeated_vehicle_time</code> minutes → <code>is_repeated = 1</code>, staff notified (<code>staff_list_for_repeated_vehicle</code>)
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 5 -->
+      <div class="flow-step">
+        <div class="flow-left">
+          <div class="step-circle" style="background:var(--green);">5</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="flow-body">
+          <div class="title">Entry is logged</div>
+          <div class="desc">A new row is written recording the entry, with all classification flags set.</div>
+          <div class="detail-box">
+            Table: <code>eps_parking_log</code> — <code>plate_no</code>, <code>in_time</code>, <code>in_or_out=1</code>, <code>ref_type</code> (resident/visitor), <code>ref_id</code> (links to <code>unit_visitor_pass</code> for visitors), <code>image</code>, flags: <code>is_repeated</code>, <code>is_under_black_list</code>, <code>is_overstay</code> (initially 0)
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 6 -->
+      <div class="flow-step">
+        <div class="flow-left">
+          <div class="step-circle" style="background:var(--green);">6</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="flow-body">
+          <div class="title">Resident, visitor &amp; staff are notified of arrival</div>
+          <div class="desc">If the vehicle is linked to an invited visitor, the inviting resident and configured staff roles are notified; the visitor may get an email confirmation.</div>
+          <div class="detail-box">
+            Resident: <code>notification_to_resident_for_drive_in_visitor</code> (push), frequency per <code>notification_to_resident_type</code> (every time / first per day / once)<br/>
+            Visitor: <code>notification_to_visitor_for_drive_in_visitor</code> (email)<br/>
+            Staff: <code>staff_list_when_visitor_arrives</code> + <code>staff_message_when_visitor_arrives</code>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 7 -->
+      <div class="flow-step">
+        <div class="flow-left">
+          <div class="step-circle" style="background:var(--amber);">7</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="flow-body">
+          <div class="title">Pre-overstay &amp; overstay monitoring (while parked)</div>
+          <div class="desc">While the vehicle remains parked, scheduled checks compare elapsed time against configured durations.</div>
+          <div class="detail-box">
+            Pre-warning: <code>xmin_prior_overstay_time</code> minutes before the limit → <code>resident_message_for_xmin_prior_overstay</code> / <code>visitor_message_for_xmin_prior_overstay</code><br/>
+            Overstay: when exceeded → <code>eps_parking_log.is_overstay = 1</code>, alerts via <code>resident_message_for_overstay</code>, <code>visitor_message_for_overstay</code>, <code>staff_list_for_overstay</code> + <code>staff_message_for_overstay</code><br/>
+            Unregistered vehicles: <code>time_for_not_exit_vehicle</code> grace period, then <code>staff_list_for_not_exit_vehicle</code> alerted
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 8 -->
+      <div class="flow-step">
+        <div class="flow-left">
+          <div class="step-circle" style="background:var(--blue);">8</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="flow-body">
+          <div class="title">Vehicle exits — camera detects plate again</div>
+          <div class="desc">On exit, the same webhook is called and the system matches it to the open entry record to close it out.</div>
+          <div class="detail-box">
+            Webhook: <code>POST /api/eps/epsparkingadd</code> (in_or_out=0 / exit detection)<br/>
+            Updates <code>eps_parking_log.out_time</code> and <code>out_image</code> on the matching open entry
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 9 -->
+      <div class="flow-step">
+        <div class="flow-left">
+          <div class="step-circle" style="background:var(--blue);">9</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="flow-body">
+          <div class="title">Manual overrides by staff (alternative path)</div>
+          <div class="desc">Staff can manually mark a vehicle (or all vehicles) as exited — e.g. if a camera misses an exit event.</div>
+          <div class="detail-box">
+            <code>POST /api/eps/epsvisitormarkasout</code> — marks one vehicle's <code>out_time</code><br/>
+            <code>POST /api/eps/epsvisitormarkallasout</code> — bulk end-of-day clear<br/>
+            Blacklist toggling: <code>POST /api/eps/epsparkingaction</code> (params: <code>epsId</code>, <code>status</code>)
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 10 -->
+      <div class="flow-step">
+        <div class="flow-left">
+          <div class="step-circle" style="background:var(--red);">10</div>
+        </div>
+        <div class="flow-body">
+          <div class="title">Daily reset (scheduled event)</div>
+          <div class="desc">A MySQL scheduled event runs once a day to reset counters and clean up stale state per condo configuration.</div>
+          <div class="detail-box">
+            Event: <code>eps_remove_vehicle</code> (file: <code>sp_change/eps_remove_vehicle.sql</code>) — runs daily, calls <code>sync_parking_spot_remove()</code> per condo<br/>
+            Behavior driven by <code>eps_setting.eps_is_reset</code> + <code>eps_reset_time</code>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end .flow -->
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- ═══ EVENT TYPES ═══ -->
+  <div class="section-label">Detection Flags</div>
+  <h2>Vehicle Classification &amp; Alert Flags</h2>
+
+  <div class="card">
+    <div class="vtype-grid">
+      <div class="vtype-card">
+        <div class="emoji">🏠</div>
+        <div class="name">Resident (ref_type=1)</div>
+        <div class="sub">Counted against eps_resident_vehicle_allow</div>
+      </div>
+      <div class="vtype-card">
+        <div class="emoji">👤</div>
+        <div class="name">Visitor (ref_type=2)</div>
+        <div class="sub">Linked to unit_visitor_pass; counted against eps_visitor_vehicle_allow</div>
+      </div>
+      <div class="vtype-card">
+        <div class="emoji">⛔</div>
+        <div class="name">is_under_black_list</div>
+        <div class="sub">Plate matched eps_parking_black_list → staff alert</div>
+      </div>
+      <div class="vtype-card">
+        <div class="emoji">🔁</div>
+        <div class="name">is_repeated</div>
+        <div class="sub">Same plate seen again within eps_repeated_vehicle_time</div>
+      </div>
+      <div class="vtype-card">
+        <div class="emoji">⏰</div>
+        <div class="name">is_overstay</div>
+        <div class="sub">Parked beyond configured duration</div>
+      </div>
+      <div class="vtype-card">
+        <div class="emoji">✍️</div>
+        <div class="name">is_manually_added</div>
+        <div class="sub">Entry created by staff, not by camera</div>
+      </div>
+      <div class="vtype-card">
+        <div class="emoji">📤</div>
+        <div class="name">Manual Exit</div>
+        <div class="sub">Staff marks one or all vehicles as out</div>
+      </div>
+      <div class="vtype-card">
+        <div class="emoji">🌙</div>
+        <div class="name">Daily Reset</div>
+        <div class="sub">eps_remove_vehicle scheduled event</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- ═══ KEY TABLES ═══ -->
+  <div class="section-label">Database</div>
+  <h2>Key Database Tables</h2>
+
+  <div class="card" style="padding: 0; overflow: hidden;">
+    <table>
+      <thead>
+        <tr>
+          <th>Table</th>
+          <th>Purpose</th>
+          <th>Type</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>eps_setting</code></td>
+          <td>Per-condo configuration — quotas, time ranges, reset time, repeated-vehicle window, overstay durations, staff role lists &amp; message templates per event type (EN/Chinese)</td>
+          <td><span class="pill pill-orange">Config</span></td>
+        </tr>
+        <tr>
+          <td><code>eps_parking_log</code></td>
+          <td>Vehicle entry/exit records — plate_no, driver_name/email, in_time/out_time, in_or_out, ref_type, ref_id, image/out_image, flags (is_repeated, is_overstay, is_under_black_list, is_manually_added)</td>
+          <td><span class="pill pill-blue">Transactional</span></td>
+        </tr>
+        <tr>
+          <td><code>eps_parking_black_list</code></td>
+          <td>Blacklisted plate numbers per condo (optionally scoped to a unit)</td>
+          <td><span class="pill pill-amber">Data</span></td>
+        </tr>
+        <tr>
+          <td><code>unit_visitor_pass</code></td>
+          <td>Visitor passes — referenced by <code>eps_parking_log.ref_id</code> for visitor-type entries (shared with Hikvision LPR)</td>
+          <td><span class="pill pill-blue">Transactional</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- ═══ API ENDPOINTS ═══ -->
+  <div class="section-label">API Reference</div>
+  <h2>Key API Endpoints</h2>
+
+  <div class="card" style="padding: 0; overflow: hidden;">
+    <table>
+      <thead>
+        <tr>
+          <th>Endpoint</th>
+          <th>Direction</th>
+          <th>Purpose</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>POST /api/eps/epsparkingadd</code></td>
+          <td><span class="pill pill-orange">Camera → iplus (webhook)</span></td>
+          <td>Receives plate detection on entry/exit; runs blacklist, quota &amp; repeated checks; logs to <code>eps_parking_log</code></td>
+        </tr>
+        <tr>
+          <td><code>POST /api/eps/epsparkingaction</code></td>
+          <td><span class="pill pill-amber">Admin → iplus</span></td>
+          <td>Enable/disable a blacklist entry (params: <code>epsId</code>, <code>status</code>)</td>
+        </tr>
+        <tr>
+          <td><code>POST /api/eps/epsparkinglogexport</code></td>
+          <td><span class="pill pill-amber">Admin → iplus</span></td>
+          <td>Export parking log history to CSV</td>
+        </tr>
+        <tr>
+          <td><code>POST /api/eps/epsparkingrepeatedlogexport</code></td>
+          <td><span class="pill pill-amber">Admin → iplus</span></td>
+          <td>Export repeated-vehicle entries</td>
+        </tr>
+        <tr>
+          <td><code>POST /api/eps/epsvisitorlog</code></td>
+          <td><span class="pill pill-amber">Admin → iplus</span></td>
+          <td>Export visitor parking records</td>
+        </tr>
+        <tr>
+          <td><code>POST /api/eps/epsblocklistexport</code></td>
+          <td><span class="pill pill-amber">Admin → iplus</span></td>
+          <td>Export blacklist entries</td>
+        </tr>
+        <tr>
+          <td><code>POST /api/eps/epsvisitormarkasout</code></td>
+          <td><span class="pill pill-amber">Admin → iplus</span></td>
+          <td>Manually marks a single vehicle's <code>out_time</code></td>
+        </tr>
+        <tr>
+          <td><code>POST /api/eps/epsvisitormarkallasout</code></td>
+          <td><span class="pill pill-amber">Admin → iplus</span></td>
+          <td>Bulk end-of-day: marks all open entries as exited</td>
+        </tr>
+        <tr>
+          <td><code>POST /apiver5-6/eps/epsparkinglogexport</code></td>
+          <td><span class="pill pill-blue">App → iplus</span></td>
+          <td>Resident app — fetch own parking history (adds <code>v_company_id</code>/<code>v_private_db_key</code> for multi-tenant)</td>
+        </tr>
+        <tr>
+          <td><code>POST /apiver5-6/eps/getincount</code></td>
+          <td><span class="pill pill-blue">App → iplus</span></td>
+          <td>Returns count of vehicles currently parked</td>
+        </tr>
+        <tr>
+          <td><code>POST /apiver5-6/eps/getlastlogofthiscondo</code></td>
+          <td><span class="pill pill-blue">App → iplus</span></td>
+          <td>Returns most recent parking event for the condo</td>
+        </tr>
+        <tr>
+          <td>Backend: <code>EpssettingController</code></td>
+          <td><span class="pill pill-amber">Admin</span></td>
+          <td>Per-condo configuration — quotas, time ranges, notification templates, staff role mappings per event type</td>
+        </tr>
+        <tr>
+          <td>Frontend: <code>EpscameraController</code></td>
+          <td><span class="pill pill-amber">Admin (Web UI)</span></td>
+          <td>Web admin dashboard for EPS camera/parking data</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- ═══ ARCHITECTURE TREE ═══ -->
+  <div class="section-label">Architecture</div>
+  <h2>Data Architecture Overview</h2>
+
+  <div class="card">
+<div class="arch-tree"><span class="h">CONDO SETUP</span>
+└─ eps_setting
+   ├─ quotas: eps_resident_vehicle_allow, eps_visitor_vehicle_allow
+   ├─ windows: eps_start_time_range, eps_end_time_range, eps_reset_time, eps_is_reset
+   ├─ thresholds: eps_repeated_vehicle_time, time_for_not_exit_vehicle, xmin_prior_overstay_time
+   └─ notification templates + staff role lists (per event type, EN/zh-SG)
+│
+<span class="h">REAL-TIME WEBHOOK (camera → iplus)</span>
+POST /api/eps/epsparkingadd  { condoId, unitId?, plate_no }
+   ├─ check eps_parking_black_list  → is_under_black_list
+   ├─ check open entries (repeated) → is_repeated
+   ├─ check quota (ref_type vs eps_*_vehicle_allow)
+   └─ INSERT/UPDATE eps_parking_log (in_time / out_time, image)
+│
+<span class="h">VISITOR LINKAGE</span>
+eps_parking_log.ref_id ──► unit_visitor_pass   (ref_type = 2, visitor)
+│
+<span class="h">ONGOING MONITORING</span>
+├─ pre-overstay alert  (xmin_prior_overstay_time before limit)
+├─ overstay alert      (is_overstay = 1 once exceeded)
+└─ unregistered vehicle grace period (time_for_not_exit_vehicle)
+│
+<span class="h">MANUAL / ADMIN OPERATIONS</span>
+├─ epsparkingaction        (enable/disable blacklist entry)
+├─ epsvisitormarkasout      (close one entry)
+├─ epsvisitormarkallasout    (close all entries — EOD)
+└─ *export endpoints          (CSV: log, repeated, visitor, blacklist)
+│
+<span class="h">DAILY RESET (scheduled DB event)</span>
+eps_remove_vehicle  →  sync_parking_spot_remove()  per condo</div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- ═══ NOTIFICATIONS ═══ -->
+  <div class="section-label">Notifications</div>
+  <h2>Who Gets Notified and When</h2>
+
+  <div class="card">
+    <div class="notif-row">
+      <div class="notif-icon" style="background:var(--green-lt);">🏠</div>
+      <div class="text">
+        <h3>Resident — Visitor Vehicle Arrived</h3>
+        <p>Push notification when an invited visitor's vehicle is detected entering. Frequency configurable: every time / first per day / once only (<code>notification_to_resident_type</code>).</p>
+      </div>
+    </div>
+    <div class="notif-row">
+      <div class="notif-icon" style="background:var(--blue-lt);">📧</div>
+      <div class="text">
+        <h3>Visitor — Pass Issued / Arrival Confirmation</h3>
+        <p>Email sent using <code>visitor_pass_has_been_issued_en</code> / <code>_zh_sg</code> and <code>notification_to_visitor_for_drive_in_visitor</code> templates, with placeholders for driver name and plate number.</p>
+      </div>
+    </div>
+    <div class="notif-row">
+      <div class="notif-icon" style="background:var(--amber-lt);">⏰</div>
+      <div class="text">
+        <h3>Resident &amp; Visitor — Overstay / Pre-Overstay</h3>
+        <p>Configurable pre-warning (<code>xmin_prior_overstay_time</code> minutes before limit) and overstay alerts via <code>resident_message_for_overstay</code> / <code>visitor_message_for_overstay</code>.</p>
+      </div>
+    </div>
+    <div class="notif-row">
+      <div class="notif-icon" style="background:var(--red-lt);">🛡️</div>
+      <div class="text">
+        <h3>Staff — Blacklist, Repeated, Overstay, Quota, Grace-Period Alerts</h3>
+        <p>Each event type has its own configurable staff role list and message template: <code>staff_list_for_black_list_vehicle</code>, <code>staff_list_for_repeated_vehicle</code>, <code>staff_list_for_overstay</code>, <code>staff_list_for_invited_visitor_exceeding</code>, <code>staff_list_for_not_exit_vehicle</code>, <code>staff_list_when_visitor_arrives</code>.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- ═══ SECURITY FEATURES ═══ -->
+  <div class="section-label">Security</div>
+  <h2>Access Control &amp; Operational Safeguards</h2>
+
+  <div class="card">
+    <div class="security-grid">
+      <div class="sec-item orange">
+        <h4>Quota Enforcement</h4>
+        <p>Separate resident/visitor vehicle limits prevent overcrowding — exceeding the visitor quota immediately alerts staff.</p>
+      </div>
+      <div class="sec-item red">
+        <h4>Blacklist Checking</h4>
+        <p>Every detected plate is checked against <code>eps_parking_black_list</code> before being logged, with immediate staff alerting on a hit.</p>
+      </div>
+      <div class="sec-item amber">
+        <h4>Overstay &amp; Pre-Overstay Alerts</h4>
+        <p>Two-stage alerting (pre-warning + overstay) gives residents/visitors a chance to move their vehicle before escalation to staff.</p>
+      </div>
+      <div class="sec-item blue">
+        <h4>Manual Override &amp; Daily Reset</h4>
+        <p>Staff can manually close stuck entries (single or bulk), and a scheduled daily event resets counters to prevent state drift.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- ═══ COMPARISON ═══ -->
+  <div class="section-label">Comparison</div>
+  <h2>EPS vs. Hikvision LPR vs. MHI</h2>
+
+  <div class="card" style="padding: 0; overflow: hidden;">
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Aspect</th>
+          <th>EPS (this doc)</th>
+          <th>Hikvision LPR</th>
+          <th>MHI</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Architecture pattern</td>
+          <td colspan="3">Identical — webhook receiver → SP validation (blacklist/quota/repeated) → log table → notifications</td>
+        </tr>
+        <tr>
+          <td>Webhook endpoint</td>
+          <td><code>/api/eps/epsparkingadd</code></td>
+          <td><code>/externalsync/hikvisioncamera</code></td>
+          <td><code>/mhi/mhiparkingadd</code></td>
+        </tr>
+        <tr>
+          <td>Log table</td>
+          <td><code>eps_parking_log</code></td>
+          <td><code>hikvision_parking_log</code></td>
+          <td><code>mhi_parking_log</code></td>
+        </tr>
+        <tr>
+          <td>Blacklist table</td>
+          <td><code>eps_parking_black_list</code></td>
+          <td><code>hikvision_parking_black_list</code></td>
+          <td><code>Mhi_parking_black_list</code></td>
+        </tr>
+        <tr>
+          <td>Extra hardware integration</td>
+          <td>None (parking only)</td>
+          <td>Facial recognition (separate Hikvisionface module)</td>
+          <td>Multi-level parking / season + visitor mapping tables</td>
+        </tr>
+        <tr>
+          <td>Multi-tenant API params</td>
+          <td>apiver5/6 add <code>v_company_id</code>/<code>v_private_db_key</code></td>
+          <td>Not present</td>
+          <td>Not present</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div><!-- end .container -->
+
+<div class="page-footer">
+  iplus Living — EPS Parking Technical Reference &nbsp;|&nbsp; Generated 2026 &nbsp;|&nbsp; Powered by EPS Webhook Integration + iplus
+</div>
+
+</body>
+</html>
