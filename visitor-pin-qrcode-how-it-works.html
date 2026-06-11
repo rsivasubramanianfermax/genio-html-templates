@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Visitor Pin / QR Code — How It Works</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue:    #1B4FD8;
+      --blue-lt: #EEF2FF;
+      --green:   #0F9C60;
+      --green-lt:#ECFDF5;
+      --red:     #DC2626;
+      --red-lt:  #FEF2F2;
+      --amber:   #D97706;
+      --amber-lt:#FFFBEB;
+      --indigo:  #4F46E5;
+      --indigo-lt:#EEF2FF;
+      --gray:    #64748B;
+      --gray-lt: #F8FAFC;
+      --border:  #E2E8F0;
+      --text:    #1E293B;
+      --heading: #0F172A;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: var(--text);
+      background: #F1F5F9;
+      line-height: 1.6;
+    }
+
+    /* ── HEADER ── */
+    .page-header {
+      background: linear-gradient(135deg, #0F172A 0%, #4F46E5 100%);
+      color: #fff;
+      padding: 48px 60px 40px;
+    }
+    .page-header .badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1.2px;
+      padding: 4px 14px;
+      margin-bottom: 18px;
+      text-transform: uppercase;
+    }
+    .page-header h1 { font-size: 38px; font-weight: 800; line-height: 1.15; margin-bottom: 12px; }
+    .page-header p  { font-size: 16px; opacity: 0.8; max-width: 660px; }
+
+    /* ── LAYOUT ── */
+    .container { max-width: 1100px; margin: 0 auto; padding: 48px 24px; }
+
+    /* ── SECTION HEADERS ── */
+    .section-label {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 11px; font-weight: 700; letter-spacing: 1.4px;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 8px;
+    }
+    .section-label::before {
+      content: ''; display: block; width: 28px; height: 2px; background: var(--indigo);
+    }
+    h2 { font-size: 24px; font-weight: 700; color: var(--heading); margin-bottom: 24px; }
+    h3 { font-size: 16px; font-weight: 700; color: var(--heading); margin-bottom: 10px; }
+
+    /* ── CARDS ── */
+    .card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 28px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.04);
+    }
+
+    /* ── WHAT IS ── */
+    .what-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-top: 8px;
+    }
+    @media(max-width:680px){ .what-grid { grid-template-columns: 1fr; } }
+
+    .what-item {
+      display: flex; gap: 14px; align-items: flex-start;
+      background: var(--gray-lt);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px 20px;
+    }
+    .what-item .icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: var(--indigo-lt); display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; font-size: 20px;
+    }
+    .what-item p { font-size: 14px; color: var(--gray); margin-top: 4px; }
+
+    /* ── CALLOUT ── */
+    .callout {
+      border-radius: 12px;
+      padding: 18px 22px;
+      margin-top: 16px;
+      border: 1px solid;
+    }
+    .callout.amber { background: var(--amber-lt); border-color: #FCD68A; }
+    .callout h4 { font-size: 13px; font-weight: 700; color: var(--amber); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+    .callout p { font-size: 14px; color: var(--text); }
+
+    /* ── FLOW DIAGRAM ── */
+    .flow {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+    .flow-step {
+      display: flex;
+      gap: 0;
+      position: relative;
+    }
+    .flow-left {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 56px;
+      flex-shrink: 0;
+    }
+    .step-circle {
+      width: 40px; height: 40px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 15px; color: #fff;
+      flex-shrink: 0; z-index: 1;
+    }
+    .step-line {
+      width: 2px;
+      flex: 1;
+      min-height: 24px;
+      background: var(--border);
+      margin: 0 auto;
+    }
+    .flow-step:last-child .step-line { display: none; }
+
+    .flow-body {
+      flex: 1;
+      padding: 0 0 28px 16px;
+    }
+    .flow-body .title {
+      font-weight: 700; font-size: 15px; color: var(--heading);
+      margin-bottom: 6px; margin-top: 8px;
+    }
+    .flow-body .desc { font-size: 14px; color: var(--gray); margin-bottom: 10px; }
+    .flow-body .detail-box {
+      background: var(--gray-lt);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 13px;
+      color: var(--text);
+    }
+    .flow-body .detail-box code {
+      background: #E2E8F0;
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 12px;
+      font-family: "Fira Code", "Courier New", monospace;
+      color: var(--indigo);
+    }
+    .tag {
+      display: inline-block;
+      border-radius: 5px;
+      font-size: 11px; font-weight: 600;
+      padding: 2px 8px;
+      margin: 2px 2px 2px 0;
+    }
+    .tag-blue   { background: var(--blue-lt);  color: var(--blue); }
+    .tag-green  { background: var(--green-lt); color: var(--green); }
+    .tag-red    { background: var(--red-lt);   color: var(--red); }
+    .tag-amber  { background: var(--amber-lt); color: var(--amber); }
+    .tag-indigo { background: var(--indigo-lt);color: var(--indigo); }
+
+    /* ── ACTORS ── */
+    .actors-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    @media(max-width:680px){ .actors-grid { grid-template-columns: 1fr; } }
+    .actor-card {
+      border-radius: 12px;
+      padding: 20px 22px;
+      border: 1px solid transparent;
+    }
+    .actor-card .icon { font-size: 28px; margin-bottom: 10px; }
+    .actor-card p { font-size: 13px; margin-top: 6px; }
+    .ac-blue   { background: var(--blue-lt);   border-color: #C7D7F9; color: var(--blue); }
+    .ac-green  { background: var(--green-lt);  border-color: #A7F3D0; color: var(--green); }
+    .ac-amber  { background: var(--amber-lt);  border-color: #FCD68A; color: var(--amber); }
+    .ac-red    { background: var(--red-lt);    border-color: #FECACA; color: var(--red); }
+    .ac-indigo { background: var(--indigo-lt); border-color: #C7D2FE; color: var(--indigo); }
+    .ac-gray   { background: var(--gray-lt);   border-color: var(--border); color: var(--gray); }
+
+    /* ── ACTION TYPES ── */
+    .vtype-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+    @media(max-width:680px){ .vtype-grid { grid-template-columns: 1fr 1fr; } }
+    .vtype-card {
+      text-align: center; padding: 18px 12px;
+      background: var(--gray-lt); border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+    .vtype-card .emoji { font-size: 30px; margin-bottom: 8px; }
+    .vtype-card .name  { font-size: 13px; font-weight: 600; color: var(--heading); }
+    .vtype-card .sub   { font-size: 11px; color: var(--gray); margin-top: 2px; }
+
+    /* ── DB TABLE ── */
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead th {
+      background: var(--indigo); color: #fff;
+      padding: 10px 14px; text-align: left; font-weight: 600;
+    }
+    thead th:first-child { border-radius: 8px 0 0 0; }
+    thead th:last-child  { border-radius: 0 8px 0 0; }
+    tbody tr:nth-child(even) { background: var(--gray-lt); }
+    tbody td { padding: 9px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    tbody td code {
+      background: #E2E8F0; border-radius: 4px;
+      padding: 1px 5px; font-size: 11px;
+      font-family: "Fira Code", "Courier New", monospace;
+      color: var(--indigo);
+    }
+    .pill {
+      display: inline-block; border-radius: 20px; font-size: 11px;
+      font-weight: 600; padding: 2px 9px;
+    }
+    .pill-blue   { background: var(--blue-lt);  color: var(--blue); }
+    .pill-green  { background: var(--green-lt); color: var(--green); }
+    .pill-red    { background: var(--red-lt);   color: var(--red); }
+    .pill-amber  { background: var(--amber-lt); color: var(--amber); }
+    .pill-indigo { background: var(--indigo-lt);color: var(--indigo); }
+
+    /* ── ARCH TREE ── */
+    .arch-tree {
+      font-family: "Fira Code", "Courier New", monospace;
+      font-size: 12.5px;
+      background: var(--gray-lt);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px 24px;
+      white-space: pre;
+      overflow-x: auto;
+      color: var(--text);
+      line-height: 1.7;
+    }
+    .arch-tree .h { color: var(--indigo); font-weight: 700; }
+
+    /* ── SECURITY ── */
+    .security-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+    }
+    @media(max-width:680px){ .security-grid { grid-template-columns: 1fr; } }
+    .sec-item {
+      border-left: 4px solid;
+      padding: 14px 16px;
+      border-radius: 0 8px 8px 0;
+      background: var(--gray-lt);
+    }
+    .sec-item h4 { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+    .sec-item p  { font-size: 13px; color: var(--gray); }
+    .sec-item.blue   { border-color: var(--blue); }
+    .sec-item.green  { border-color: var(--green); }
+    .sec-item.red    { border-color: var(--red); }
+    .sec-item.amber  { border-color: var(--amber); }
+    .sec-item.indigo { border-color: var(--indigo); }
+
+    /* ── NOTIFICATION ── */
+    .notif-row {
+      display: flex; align-items: flex-start; gap: 14px;
+      padding: 14px 0; border-bottom: 1px solid var(--border);
+    }
+    .notif-row:last-child { border-bottom: none; }
+    .notif-icon {
+      width: 36px; height: 36px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; font-size: 16px;
+    }
+    .notif-row .text p { font-size: 13px; color: var(--gray); margin-top: 3px; }
+
+    /* ── COMPARISON ── */
+    .compare-table td:first-child { font-weight: 600; color: var(--heading); white-space: nowrap; }
+
+    /* ── FOOTER ── */
+    .page-footer {
+      background: var(--heading); color: rgba(255,255,255,0.5);
+      text-align: center; padding: 24px;
+      font-size: 12px;
+    }
+
+    /* ── DIVIDER ── */
+    .section-divider { height: 40px; }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════ HEADER ════════════════════════════════════════ -->
+<div class="page-header">
+  <div class="badge">iplus Living — Technical Reference</div>
+  <h1>Visitor Pin / QR Code — How It Works</h1>
+  <p>How residents issue visitor passes with a QR code or numeric PIN, how visitors are notified, and how security guards (and optionally ME/Hikvision FR doors) validate them.</p>
+</div>
+
+<div class="container">
+
+  <!-- ═══ WHAT IS IT ═══ -->
+  <div class="section-label">Overview</div>
+  <h2>What is the Visitor Pin / QR Code Feature?</h2>
+
+  <div class="card">
+    <p style="font-size:15px; margin-bottom:8px;">
+      The <strong>Visitor Pin / QR Code</strong> feature lets a resident pre-register an expected visitor and generate a <strong>QR code</strong> and/or <strong>numeric PIN</strong> for them. The visitor receives this code by email, and on arrival, <strong>security guards scan/enter it</strong> in the iplus app to verify the visitor is expected, log their entry, and (depending on condo configuration) automatically grant them physical door access.
+    </p>
+    <p style="font-size:15px; margin-bottom:20px;">
+      Despite the "one-time" name, the code is <strong>not single-use</strong> — it remains valid for a configured time window (<code>pass_valid_starttime</code> → <code>pass_valid_endtime</code>) and can be scanned multiple times within it (e.g. entry + exit, or a group of visitors sharing one pass).
+    </p>
+    <div class="what-grid">
+      <div class="what-item">
+        <div class="icon">📱</div>
+        <div>
+          <h3>Per-condo QR or PIN mode</h3>
+          <p>Each condo has independent <code>visitor_qr_code</code> and <code>visitor_pin</code> flags — a condo can offer a scannable QR image, a numeric PIN, or both.</p>
+        </div>
+      </div>
+      <div class="what-item">
+        <div class="icon">✉️</div>
+        <div>
+          <h3>Email delivery</h3>
+          <p>The QR image (uploaded to S3) and/or PIN are sent to the visitor's email via a queued mail job, using one of several templates depending on condo features.</p>
+        </div>
+      </div>
+      <div class="what-item">
+        <div class="icon">👥</div>
+        <div>
+          <h3>Group passes</h3>
+          <p><code>is_group_pass</code> + <code>max_visitor</code> let one QR/PIN cover multiple people (e.g. a contractor crew or event guests), tracked via a running visit count.</p>
+        </div>
+      </div>
+      <div class="what-item">
+        <div class="icon">🔌</div>
+        <div>
+          <h3>Optional hardware tie-in</h3>
+          <p>If Hikvision/ME FR door access is enabled and the pass grants <code>allow_unit_access</code>, the same code is synced to <code>hikvision_me_face_photo</code> for use at a physical door keypad/panel.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout amber">
+      <h4>Naming Note</h4>
+      <p>
+        "One-time" refers to the pass being issued <strong>once per visit/booking</strong>, not to single-use enforcement. Validation (<code>visitor_qrcode_detail_ver4</code>) only checks that the current time falls within <code>pass_valid_starttime</code>/<code>pass_valid_endtime</code> — there is no flag that marks a code as "consumed". For group passes, exceeding <code>max_visitor</code> only triggers an informational message to the guard, not a hard block.
+      </p>
+    </div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- ═══ WHO IS INVOLVED ═══ -->
+  <div class="section-label">Actors</div>
+  <h2>Who is Involved?</h2>
+
+  <div class="card">
+    <div class="actors-grid">
+      <div class="actor-card ac-indigo">
+        <div class="icon">🏠</div>
+        <h3>Resident</h3>
+        <p>Creates the visitor pass via the app — enters visitor details, validity window, and (optionally) vehicle/group info. Receives a notification when the visitor checks in.</p>
+      </div>
+      <div class="actor-card ac-blue">
+        <div class="icon">📧</div>
+        <h3>Visitor</h3>
+        <p>Receives an email containing the QR code image and/or numeric PIN, and presents it (on a phone or printed) at the gate/lobby.</p>
+      </div>
+      <div class="actor-card ac-green">
+        <div class="icon">🛡️</div>
+        <h3>Security Guard</h3>
+        <p>Scans the QR (camera) or enters the PIN in the iplus app, sees pass validity + visitor details, and logs the check-in (and later check-out).</p>
+      </div>
+      <div class="actor-card ac-amber">
+        <div class="icon">🏢</div>
+        <h3>Property Management</h3>
+        <p>Configures per-condo <code>visitor_qr_code</code> / <code>visitor_pin</code> flags, location/purpose lookups, and Hikvision/ME FR integration settings.</p>
+      </div>
+      <div class="actor-card ac-red">
+        <div class="icon">🚪</div>
+        <h3>ME/Hikvision FR Door (optional)</h3>
+        <p>If enabled, the visitor's PIN/QR is synced to <code>hikvision_me_face_photo</code> so it can be entered on a physical door keypad — reusing the ME Platform/Hikvision FR pipeline.</p>
+      </div>
+      <div class="actor-card ac-gray">
+        <div class="icon">📋</div>
+        <h3>Visit Log</h3>
+        <p><code>unit_visitor_log</code> records every check-in/check-out against the pass, used to compute the running visitor count for group passes.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- ═══ STEP BY STEP FLOW ═══ -->
+  <div class="section-label">End-to-End Flow</div>
+  <h2>How It's Issued, Delivered &amp; Validated — Step by Step</h2>
+
+  <div class="card">
+    <div class="flow">
+
+      <!-- STEP 1 -->
+      <div class="flow-step">
+        <div class="flow-left">
+          <div class="step-circle" style="background:var(--indigo);">1</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="flow-body">
+          <div class="title">Condo enables QR and/or PIN mode</div>
+          <div class="desc">Property management toggles which code formats are available for the condo.</div>
+          <div class="detail-box">
+            Table: <code>condo</code> — flags <code>visitor_qr_code</code>, <code>visitor_pin</code><br/>
+            File: <code>sp_change/visitor_pass_add_ver5.sql:138</code>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 2 -->
+      <div class="flow-step">
+        <div class="flow-left">
+          <div class="step-circle" style="background:var(--indigo);">2</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="flow-body">
+          <div class="title">Resident creates a visitor pass</div>
+          <div class="desc">From the app, the resident enters the visitor's details and the validity window for the visit.</div>
+          <div class="detail-box">
+            API: <code>POST /apiver6/visitor/addvisitorpass</code><br/>
+            File: <code>apiver6/controllers/VisitorController.php:1260</code> (apiver5 equivalent at <code>:1237</code>)<br/>
+            Required: <code>condoId, unitId, firstName, lastName, visitStart, visitOut, flag</code><br/>
+            Optional: <code>email, phoneNo, plateNo, vehicleTypeId/CategoryId/SubCategoryId, isGroupPass, maxVisitor, groupName, classification, iuNo, nricNo, isPrivate, allowUnitAccess, location_id/name, purpose_id/name, remark, isSecGuard</code>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 3 -->
+      <div class="flow-step">
+        <div class="flow-left">
+          <div class="step-circle" style="background:var(--indigo);">3</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="flow-body">
+          <div class="title">QR / PIN / hex code generated</div>
+          <div class="desc">The pass record is created and a unique code set is generated for it.</div>
+          <div class="detail-box">
+            Stored proc: <code>visitor_pass_add_ver5</code> (<code>sp_change/visitor_pass_add_ver5.sql:209-287</code>) calls <code>fn_qr_code_ver2(condo_id)</code><br/>
+            Generates: <code>qr_code</code>, <code>qr_number</code>, <code>hex_code</code>, <code>me_code</code>, <code>v_pin_to_me</code> (5-digit PIN)<br/>
+            Inserted into: <code>unit_visitor_pass</code> — incl. <code>is_group_pass</code>, <code>max_visitor</code>, <code>status</code>, <code>pass_valid_starttime</code>, <code>pass_valid_endtime</code>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 4 -->
+      <div class="flow-step">
+        <div class="flow-left">
+          <div class="step-circle" style="background:var(--indigo);">4</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="flow-body">
+          <div class="title">QR image rendered &amp; uploaded</div>
+          <div class="desc">A scannable QR code image is generated from the code and stored for emailing.</div>
+          <div class="detail-box">
+            Library: <code>_qrcodegenerator_library($condoId, $orgqrcodename)</code><br/>
+            Storage: uploaded to <span class="tag tag-blue">AWS S3</span> — <code>apiver6/controllers/VisitorController.php:771-781</code>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 5 -->
+      <div class="flow-step">
+        <div class="flow-left">
+          <div class="step-circle" style="background:var(--blue);">5</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="flow-body">
+          <div class="title">Visitor receives the pass by email</div>
+          <div class="desc">A queued email is sent to the visitor with the QR image and/or PIN, using a template selected by condo configuration.</div>
+          <div class="detail-box">
+            Sent via: <code>Mail::addMailToQueue($toEmail, $module, $mailData, $attachment)</code> — <code>VisitorController.php:1573 / 1627</code><br/>
+            Templates: <span class="tag tag-indigo">addvisitorpass</span> (default), <span class="tag tag-indigo">addvisitorpass_with_vehicle</span> (Hikvision + vehicle), <span class="tag tag-indigo">addvisitorpassface</span> (face-photo enrollment + unit access)<br/>
+            Mail data includes: <code>qrCode</code> (S3 URL), <code>qr_number</code>, <code>hex_number</code>, <code>me_code</code>, <code>pin_to_me</code>, <code>visitor_pin</code> flag, location, unit/condo names
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 6 -->
+      <div class="flow-step">
+        <div class="flow-left">
+          <div class="step-circle" style="background:var(--red);">6</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="flow-body">
+          <div class="title">Optional: synced to Hikvision/ME FR for door access</div>
+          <div class="desc">If the condo has Hikvision/ME face-recognition doors enabled and the pass grants unit access, the code is also pushed into the FR sync table.</div>
+          <div class="detail-box">
+            Condition: <code>allow_unit_access > 0 AND is_hikvision_enable > 0 AND (visitor_qr_code OR visitor_pin)</code><br/>
+            Table: <code>hikvision_me_face_photo</code> — stores <code>pin_code</code>, <code>person_id</code>, <code>me_code</code>, <code>visitor_pin</code>, <code>common_access_group_id</code>, <code>group_controller_template_id</code>, <code>type</code> (2=QR, 3=PIN)<br/>
+            File: <code>sp_change/visitor_pass_add_ver5.sql:1111-1196</code>; sync pipeline shared with ME Platform — see <code>sync_hikvision_me_face_new_ver4.sql:35,160-171</code>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 7 -->
+      <div class="flow-step">
+        <div class="flow-left">
+          <div class="step-circle" style="background:var(--green);">7</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="flow-body">
+          <div class="title">Security guard scans/enters the code on arrival</div>
+          <div class="desc">The guard's app validates the code against the pass and shows visitor details + pass validity.</div>
+          <div class="detail-box">
+            API: <code>POST /apiver6/visitor/visitorlogpassdetail</code> (params: <code>condoId, unitId, qrCode</code>)<br/>
+            File: <code>VisitorController.php:1115-1186</code> → SP <code>visitor_qrcode_detail_ver4</code><br/>
+            Result codes: <span class="tag tag-red">404</span> not found, <span class="tag tag-amber">202</span> wrong condo, <span class="tag tag-amber">201</span> outside validity window, <span class="tag tag-green">200</span> valid (<span class="tag tag-indigo">1001</span> = valid + extra-visitor info message)<br/>
+            Validity check: <code>UTC_TIMESTAMP() BETWEEN pass_valid_starttime AND pass_valid_endtime</code>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 8 -->
+      <div class="flow-step">
+        <div class="flow-left">
+          <div class="step-circle" style="background:var(--green);">8</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="flow-body">
+          <div class="title">Check-in is logged</div>
+          <div class="desc">A visit log entry is created against the pass, and the resident is notified.</div>
+          <div class="detail-box">
+            API: <code>POST /apiver6/visitor/addvisitorlog</code> — <code>VisitorController.php:144</code> → SP <code>visitor_log_add_ver3</code><br/>
+            Inserts into: <code>unit_visitor_log</code> (<code>visitor_pass_id</code>, <code>is_notification_sent</code>, <code>is_deleted</code>, <code>log_type</code>) — <code>sp_change/visitor_log_add_ver3.sql:75-111</code><br/>
+            Resident notification raised via <code>notification_add_ver3</code> (same SP, lines 154-176)
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 9 -->
+      <div class="flow-step">
+        <div class="flow-left">
+          <div class="step-circle" style="background:var(--amber);">9</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="flow-body">
+          <div class="title">Group pass: visit count tracked</div>
+          <div class="desc">For group passes, each scan adds to a running count which is shown to the guard against the configured maximum.</div>
+          <div class="detail-box">
+            <code>log_count</code> = <code>COUNT(unit_visitor_log WHERE visitor_pass_id = ...) + 1</code><br/>
+            Compared against <code>max_visitor</code> — exceeding it shows an informational message (<code>_getMessageForVisitorGetDetail('1002', max_visitor, log_count)</code>, <code>:1156</code>) but does <strong>not</strong> block entry
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 10 -->
+      <div class="flow-step">
+        <div class="flow-left">
+          <div class="step-circle" style="background:var(--gray);">10</div>
+        </div>
+        <div class="flow-body">
+          <div class="title">Check-out &amp; pass cancellation</div>
+          <div class="desc">A visitor's exit can be recorded, and a pass can be cancelled before/after use.</div>
+          <div class="detail-box">
+            Checkout: <code>POST /apiver6/visitor/addouttimevisitorlog</code> — <code>VisitorController.php:969</code><br/>
+            Cancel/delete: <code>POST /apiver6/visitor/deletevisitor</code> — <code>VisitorController.php:430</code> → SP <code>visitor_delete_ver3</code> (soft-delete via <code>is_deleted</code> on <code>unit_visitor_log</code>)<br/>
+            Edit pass: <code>POST /apiver6/visitor/updatevisitorpass</code> — <code>VisitorController.php:590</code> → SP <code>visitors_update_ver5</code>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end .flow -->
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- ═══ TYPES ═══ -->
+  <div class="section-label">Pass Types</div>
+  <h2>Code Formats &amp; Pass Variants</h2>
+
+  <div class="card">
+    <div class="vtype-grid">
+      <div class="vtype-card">
+        <div class="emoji">🔳</div>
+        <div class="name">QR Code</div>
+        <div class="sub">condo.visitor_qr_code = 1 — scannable image emailed to visitor</div>
+      </div>
+      <div class="vtype-card">
+        <div class="emoji">🔢</div>
+        <div class="name">Numeric PIN</div>
+        <div class="sub">condo.visitor_pin = 1 — visitor_pin / v_pin_to_me, enterable manually</div>
+      </div>
+      <div class="vtype-card">
+        <div class="emoji">👤</div>
+        <div class="name">Single Visitor Pass</div>
+        <div class="sub">is_group_pass = 0 — one code for one named visitor</div>
+      </div>
+      <div class="vtype-card">
+        <div class="emoji">👥</div>
+        <div class="name">Group Pass</div>
+        <div class="sub">is_group_pass = 1 + max_visitor — shared code for multiple visitors</div>
+      </div>
+      <div class="vtype-card">
+        <div class="emoji">🚗</div>
+        <div class="name">Pass with Vehicle</div>
+        <div class="sub">plateNo + vehicleType — also feeds Hikvision/EPS/MHI parking checks</div>
+      </div>
+      <div class="vtype-card">
+        <div class="emoji">🔐</div>
+        <div class="name">Pass with Unit Access</div>
+        <div class="sub">allow_unit_access = 1 — synced to hikvision_me_face_photo for door entry</div>
+      </div>
+      <div class="vtype-card">
+        <div class="emoji">⏱️</div>
+        <div class="name">Time-Bound Validity</div>
+        <div class="sub">pass_valid_starttime → pass_valid_endtime checked on every scan</div>
+      </div>
+      <div class="vtype-card">
+        <div class="emoji">📋</div>
+        <div class="name">Log-Only Entry</div>
+        <div class="sub">addvisitorlog without a pre-issued pass/QR (walk-in visitor)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- ═══ KEY TABLES ═══ -->
+  <div class="section-label">Database</div>
+  <h2>Key Database Tables</h2>
+
+  <div class="card" style="padding: 0; overflow: hidden;">
+    <table>
+      <thead>
+        <tr>
+          <th>Table</th>
+          <th>Purpose</th>
+          <th>Type</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>condo.visitor_qr_code</code> / <code>condo.visitor_pin</code></td>
+          <td>Per-condo flags enabling QR code and/or numeric PIN modes</td>
+          <td><span class="pill pill-indigo">Feature Flag</span></td>
+        </tr>
+        <tr>
+          <td><code>unit_visitor_pass</code></td>
+          <td>The visitor pass record — visitor details, <code>qr_code</code>, <code>hex_code</code>, <code>qr_number</code>, <code>me_code</code>, <code>visitor_pin</code>, <code>pin_sent_to_me</code>, <code>pass_valid_starttime/endtime</code>, <code>is_group_pass</code>, <code>max_visitor</code>, <code>status</code>, <code>condo_visitor_unique_id</code></td>
+          <td><span class="pill pill-blue">Transactional</span></td>
+        </tr>
+        <tr>
+          <td><code>unit_visitor_log</code></td>
+          <td>Each check-in/check-out event linked via <code>visitor_pass_id</code> — <code>is_notification_sent</code>, <code>is_deleted</code>, <code>log_type</code></td>
+          <td><span class="pill pill-amber">Log</span></td>
+        </tr>
+        <tr>
+          <td><code>unit_visitor_log_hik</code></td>
+          <td>Hikvision-specific log linkage for visitor parking/entry events</td>
+          <td><span class="pill pill-amber">Log</span></td>
+        </tr>
+        <tr>
+          <td><code>hikvision_me_face_photo</code></td>
+          <td>Optional sync target for ME/Hikvision FR door access — <code>pin_code</code>, <code>person_id</code>, <code>me_code</code>, <code>visitor_pin</code>, <code>common_access_group_id</code>, <code>group_controller_template_id</code>, <code>type</code> (2=QR, 3=PIN)</td>
+          <td><span class="pill pill-blue">Transactional</span></td>
+        </tr>
+        <tr>
+          <td><code>unit_visitor_spot_delete_past_data</code></td>
+          <td>Cleanup/archival table for expired visitor pass data</td>
+          <td><span class="pill pill-amber">Log</span></td>
+        </tr>
+        <tr>
+          <td><code>eps_parking</code> / <code>hikvision_parking</code> / <code>mhi_parking</code> (+ <code>_sync</code>)</td>
+          <td>Independent vehicle-access integrations — populated separately when a pass includes vehicle/plate details</td>
+          <td><span class="pill pill-blue">Transactional</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- ═══ API ENDPOINTS ═══ -->
+  <div class="section-label">API Reference</div>
+  <h2>Key API Endpoints (apiver6/controllers/VisitorController.php)</h2>
+
+  <div class="card" style="padding: 0; overflow: hidden;">
+    <table>
+      <thead>
+        <tr>
+          <th>Endpoint</th>
+          <th>Direction</th>
+          <th>Purpose</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>POST /visitor/addvisitorpass</code> <span class="tag tag-indigo">:1260</span></td>
+          <td><span class="pill pill-indigo">Resident → iplus</span></td>
+          <td>Create a visitor pass — generates QR/PIN/hex code, emails the visitor</td>
+        </tr>
+        <tr>
+          <td><code>POST /visitor/updatevisitorpass</code> <span class="tag tag-indigo">:590</span></td>
+          <td><span class="pill pill-indigo">Resident → iplus</span></td>
+          <td>Edit an existing pass (SP <code>visitors_update_ver5</code>)</td>
+        </tr>
+        <tr>
+          <td><code>POST /visitor/visitorlogpassdetail</code> <span class="tag tag-green">:1115</span></td>
+          <td><span class="pill pill-green">Guard → iplus</span></td>
+          <td>Validate a scanned QR / entered PIN against <code>unit_visitor_pass</code> (SP <code>visitor_qrcode_detail_ver4</code>)</td>
+        </tr>
+        <tr>
+          <td><code>POST /visitor/addvisitorlog</code> <span class="tag tag-green">:144</span></td>
+          <td><span class="pill pill-green">Guard → iplus</span></td>
+          <td>Record a visitor check-in (with or without a pre-issued pass) — SP <code>visitor_log_add_ver3</code></td>
+        </tr>
+        <tr>
+          <td><code>POST /visitor/addouttimevisitorlog</code> <span class="tag tag-green">:969</span></td>
+          <td><span class="pill pill-green">Guard → iplus</span></td>
+          <td>Record visitor check-out time</td>
+        </tr>
+        <tr>
+          <td><code>POST /visitor/deletevisitor</code> <span class="tag tag-red">:430</span></td>
+          <td><span class="pill pill-indigo">Resident/Guard → iplus</span></td>
+          <td>Cancel/soft-delete a visitor log/pass (SP <code>visitor_delete_ver3</code>)</td>
+        </tr>
+        <tr>
+          <td><code>POST /visitor/visitorgetdetail</code> <span class="tag tag-blue">:297</span></td>
+          <td><span class="pill pill-blue">App → iplus</span></td>
+          <td>Get details of a specific visitor log entry</td>
+        </tr>
+        <tr>
+          <td><code>POST /visitor/visitorsgetlist</code> / <code>visitorsgetlistnew</code> <span class="tag tag-blue">:1956 / :2203</span></td>
+          <td><span class="pill pill-blue">App → iplus</span></td>
+          <td>List visitor passes for a unit/condo</td>
+        </tr>
+        <tr>
+          <td><code>POST /visitor/visitorspassdetail</code> <span class="tag tag-blue">:2529</span></td>
+          <td><span class="pill pill-blue">App → iplus</span></td>
+          <td>Get full pass detail (QR/PIN, validity, group info)</td>
+        </tr>
+        <tr>
+          <td><code>POST /visitor/visitorsgetlistcsv</code> <span class="tag tag-amber">:2741</span></td>
+          <td><span class="pill pill-amber">Admin export</span></td>
+          <td>CSV export of visitor passes/logs</td>
+        </tr>
+        <tr>
+          <td><code>POST /visitor/visitorspassdetailhikvision</code> <span class="tag tag-red">:2977</span></td>
+          <td><span class="pill pill-red">Hikvision sync</span></td>
+          <td>Hikvision-specific pass detail (vehicle/face access integration)</td>
+        </tr>
+        <tr>
+          <td><code>POST /visitor/requestlocationlist</code> / <code>addupdatelocation</code> <span class="tag tag-blue">:3041 / :3149</span></td>
+          <td><span class="pill pill-blue">App → iplus</span></td>
+          <td>Manage "visit location" lookup values</td>
+        </tr>
+        <tr>
+          <td><code>POST /visitor/requestpurposelist</code> / <code>addupdatepurpose</code> <span class="tag tag-blue">:3095 / :3194</span></td>
+          <td><span class="pill pill-blue">App → iplus</span></td>
+          <td>Manage "visit purpose" lookup values</td>
+        </tr>
+      </tbody>
+    </table>
+    <div style="padding: 12px 14px; font-size: 12px; color: var(--gray);">
+      apiver5 mirrors the same actions at slightly different line offsets (e.g. <code>actionAddvisitorpass</code> at <code>apiver5/controllers/VisitorController.php:1237</code>).
+    </div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- ═══ ARCHITECTURE TREE ═══ -->
+  <div class="section-label">Architecture</div>
+  <h2>Data Architecture Overview</h2>
+
+  <div class="card">
+<div class="arch-tree"><span class="h">CONFIGURATION</span>
+condo
+├─ visitor_qr_code     (enable QR code mode)
+└─ visitor_pin         (enable numeric PIN mode)
+│
+<span class="h">PASS CREATION</span>
+App (Resident) → POST /visitor/addvisitorpass
+   → visitor_pass_add_ver5
+        → fn_qr_code_ver2(condo_id)
+             returns: qr_code, qr_number, hex_code, me_code, v_pin_to_me
+        → INSERT unit_visitor_pass
+             (visitor details, codes, is_group_pass, max_visitor,
+              pass_valid_starttime/endtime, status)
+   → _qrcodegenerator_library() → QR image → AWS S3
+   → Mail::addMailToQueue()
+        templates: addvisitorpass | addvisitorpass_with_vehicle | addvisitorpassface
+   → (if allow_unit_access + Hikvision/ME FR enabled)
+        INSERT hikvision_me_face_photo (type 2=QR / 3=PIN)
+│
+<span class="h">VALIDATION (SECURITY GUARD)</span>
+App (Guard) → POST /visitor/visitorlogpassdetail
+   → visitor_qrcode_detail_ver4
+        checks: qr_code/pin exists + matches condo
+                + UTC_TIMESTAMP() BETWEEN pass_valid_starttime AND pass_valid_endtime
+        returns: 404 not found / 202 wrong condo / 201 expired / 200 (or 1001) valid
+                 + log_count, max_visitor
+│
+<span class="h">CHECK-IN / CHECK-OUT</span>
+App (Guard) → POST /visitor/addvisitorlog
+   → visitor_log_add_ver3
+        → INSERT unit_visitor_log (visitor_pass_id, log_type, ...)
+        → notification_add_ver3 → notify resident
+App (Guard) → POST /visitor/addouttimevisitorlog  (records exit time)
+│
+<span class="h">OPTIONAL HARDWARE PATH (shared with ME Platform / Hikvision FR)</span>
+hikvision_me_face_photo → sync_hikvision_me_face_new_ver4
+   → physical door keypad/panel accepts pin_code / QR for entry</div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- ═══ NOTIFICATIONS ═══ -->
+  <div class="section-label">Notifications</div>
+  <h2>Notifications &amp; Logging</h2>
+
+  <div class="card">
+    <div class="notif-row">
+      <div class="notif-icon" style="background:var(--indigo-lt);">✉️</div>
+      <div class="text">
+        <h3>Visitor — Pass Email</h3>
+        <p>Sent on pass creation with the QR image (S3 link), PIN, hex/QR numbers, location, and unit/condo details. Template varies by condo features (<code>addvisitorpass</code>, <code>addvisitorpass_with_vehicle</code>, <code>addvisitorpassface</code>).</p>
+      </div>
+    </div>
+    <div class="notif-row">
+      <div class="notif-icon" style="background:var(--green-lt);">🔔</div>
+      <div class="text">
+        <h3>Resident — Visitor Checked In</h3>
+        <p>Raised via <code>notification_add_ver3</code> when the guard logs the visitor's arrival (<code>visitor_log_add_ver3.sql:154-176</code>).</p>
+      </div>
+    </div>
+    <div class="notif-row">
+      <div class="notif-icon" style="background:var(--amber-lt);">⚠️</div>
+      <div class="text">
+        <h3>Guard — Pass Validity / Group Count Messages</h3>
+        <p><code>visitorlogpassdetail</code> returns informational codes: 201 (outside validity window), 1001/1002 (valid pass, with extra-visitor count info for group passes vs. <code>max_visitor</code>).</p>
+      </div>
+    </div>
+    <div class="notif-row">
+      <div class="notif-icon" style="background:var(--blue-lt);">📋</div>
+      <div class="text">
+        <h3>Audit Trail</h3>
+        <p>Every check-in/check-out is recorded in <code>unit_visitor_log</code> (with <code>is_deleted</code> for cancellations), exportable via <code>visitorsgetlistcsv</code>.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- ═══ SECURITY FEATURES ═══ -->
+  <div class="section-label">Security</div>
+  <h2>Security &amp; Operational Notes</h2>
+
+  <div class="card">
+    <div class="security-grid">
+      <div class="sec-item indigo">
+        <h4>Time-Window Validation Only</h4>
+        <p>The code's "validity" is purely a time-range check (<code>pass_valid_starttime</code>/<code>endtime</code>) plus condo match — there is no cryptographic signing or single-use consumption flag.</p>
+      </div>
+      <div class="sec-item amber">
+        <h4>Group Pass Cap is Advisory</h4>
+        <p>Exceeding <code>max_visitor</code> on a group pass surfaces a message to the guard but does not block additional check-ins — enforcement relies on the guard's judgment.</p>
+      </div>
+      <div class="sec-item blue">
+        <h4>Per-Condo Code Format</h4>
+        <p><code>visitor_qr_code</code> and <code>visitor_pin</code> are independent flags — a condo can require both, either, or neither, affecting which fields appear in the pass email.</p>
+      </div>
+      <div class="sec-item red">
+        <h4>Hardware Path Reuses ME/Hikvision FR Pipeline</h4>
+        <p>When unit access is granted, the visitor's PIN/QR is written to <code>hikvision_me_face_photo</code> — the same sync mechanism used for resident face recognition (see <code>me-platform-complete-how-it-works.html</code>). No separate hardware protocol exists for visitor codes.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- ═══ COMPARISON ═══ -->
+  <div class="section-label">Comparison</div>
+  <h2>Visitor Pin/QR vs. ME Platform vs. EPS/Hikvision Parking</h2>
+
+  <div class="card" style="padding: 0; overflow: hidden;">
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Aspect</th>
+          <th>Visitor Pin/QR (this doc)</th>
+          <th>ME Platform (Doors/Lifts)</th>
+          <th>EPS/Hikvision Parking</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Primary nature</td>
+          <td>App/software feature (visitor management)</td>
+          <td>Hardware integration (relay controllers)</td>
+          <td>Hardware integration (camera/webhook)</td>
+        </tr>
+        <tr>
+          <td>Issued by</td>
+          <td>Resident, via app</td>
+          <td>Property management (mappings)</td>
+          <td>Camera/sensor detection</td>
+        </tr>
+        <tr>
+          <td>Validated by</td>
+          <td>Security guard (app scan/PIN entry)</td>
+          <td>WebSocket gateway + controller</td>
+          <td>Webhook + plate/vehicle matching</td>
+        </tr>
+        <tr>
+          <td>Hardware touchpoint</td>
+          <td>Optional — via <code>hikvision_me_face_photo</code> sync</td>
+          <td>Always — physical door/lift relay</td>
+          <td>Always — camera/sensor + barrier</td>
+        </tr>
+        <tr>
+          <td>"One-time" semantics</td>
+          <td>Time-window validity, reusable within window</td>
+          <td>N/A (per-action access check)</td>
+          <td>N/A (per-vehicle-event detection)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div><!-- end .container -->
+
+<div class="page-footer">
+  iplus Living — Visitor Pin/QR Code Technical Reference &nbsp;|&nbsp; Generated 2026 &nbsp;|&nbsp; Powered by iplus Visitor Management + optional ME/Hikvision FR Sync
+</div>
+
+</body>
+</html>
