@@ -889,32 +889,6 @@
   </div>
 
   <div class="section-divider"></div>
-
-  <!-- ═══ GENIO RELEVANCE ═══ -->
-  <div class="section-label">Genio Strategy</div>
-  <h2>LPR in the Context of Genio</h2>
-
-  <div class="callout blue">
-    <h3>Singapore (iplus + Hikvision)</h3>
-    <ul>
-      <li><strong>Existing system is mature</strong> — Hikvision LPR cameras are already deployed, webhook integration is live, and full audit logging is operational.</li>
-      <li>AI chatbot for Genio Singapore can query the LPR access logs to answer resident questions like "When did my visitor arrive?" or "What is my vehicle entry history?"</li>
-      <li>Blacklist and repeated entry alerts can be surfaced in the Genio AI chat as real-time security notifications.</li>
-    </ul>
-  </div>
-
-  <div style="height:14px;"></div>
-
-  <div class="callout green">
-    <h3>Rest of World (Genio Global)</h3>
-    <ul>
-      <li><strong>Not all regions will have Hikvision</strong> — Genio's LPR module should be designed as a <strong>camera-agnostic webhook receiver</strong>: any LPR camera that can POST a plate number should be supported.</li>
-      <li>The data model (visitor pass, parking log, blacklist, entry/exit event) should be replicated in the Genio NestJS backend as a portable module.</li>
-      <li>Fallback: <strong>manual plate entry by security guard</strong> (like the current <code>vehicle-add</code> flow) must always work even without hardware cameras.</li>
-      <li>For regions without physical cameras, the AI chatbot can handle visitor pre-registration digitally — resident invites visitor, system generates a QR or OTP at the gate instead of plate recognition.</li>
-    </ul>
-  </div>
-
 </div><!-- end .container -->
 
 <div class="page-footer">
