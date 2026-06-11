@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Facility Security &amp; Energy Control — How It Works</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue:    #1B4FD8;
+      --blue-lt: #EEF2FF;
+      --green:   #0F9C60;
+      --green-lt:#ECFDF5;
+      --red:     #DC2626;
+      --red-lt:  #FEF2F2;
+      --amber:   #D97706;
+      --amber-lt:#FFFBEB;
+      --emerald: #059669;
+      --emerald-lt:#ECFDF5;
+      --gray:    #64748B;
+      --gray-lt: #F8FAFC;
+      --border:  #E2E8F0;
+      --text:    #1E293B;
+      --heading: #0F172A;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: var(--text);
+      background: #F1F5F9;
+      line-height: 1.6;
+    }
+
+    /* ── HEADER ── */
+    .page-header {
+      background: linear-gradient(135deg, #0F172A 0%, #059669 60%, #DC2626 130%);
+      color: #fff;
+      padding: 48px 60px 40px;
+    }
+    .page-header .badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1.2px;
+      padding: 4px 14px;
+      margin-bottom: 18px;
+      text-transform: uppercase;
+    }
+    .page-header h1 { font-size: 38px; font-weight: 800; line-height: 1.15; margin-bottom: 12px; }
+    .page-header p  { font-size: 16px; opacity: 0.8; max-width: 660px; }
+
+    /* ── LAYOUT ── */
+    .container { max-width: 1100px; margin: 0 auto; padding: 48px 24px; }
+
+    /* ── SECTION HEADERS ── */
+    .section-label {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 11px; font-weight: 700; letter-spacing: 1.4px;
+      text-transform: uppercase; color: var(--emerald);
+      margin-bottom: 8px;
+    }
+    .section-label::before {
+      content: ''; display: block; width: 28px; height: 2px; background: var(--emerald);
+    }
+    h2 { font-size: 24px; font-weight: 700; color: var(--heading); margin-bottom: 24px; }
+    h3 { font-size: 16px; font-weight: 700; color: var(--heading); margin-bottom: 10px; }
+
+    /* ── CARDS ── */
+    .card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 28px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.04);
+    }
+
+    /* ── WHAT IS ── */
+    .what-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-top: 8px;
+    }
+    @media(max-width:680px){ .what-grid { grid-template-columns: 1fr; } }
+
+    .what-item {
+      display: flex; gap: 14px; align-items: flex-start;
+      background: var(--gray-lt);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px 20px;
+    }
+    .what-item .icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: var(--emerald-lt); display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; font-size: 20px;
+    }
+    .what-item p { font-size: 14px; color: var(--gray); margin-top: 4px; }
+
+    /* ── CALLOUT ── */
+    .callout {
+      border-radius: 12px;
+      padding: 18px 22px;
+      margin-top: 16px;
+      border: 1px solid;
+    }
+    .callout.amber { background: var(--amber-lt); border-color: #FCD68A; }
+    .callout h4 { font-size: 13px; font-weight: 700; color: var(--amber); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+    .callout p { font-size: 14px; color: var(--text); }
+
+    /* ── FLOW DIAGRAM ── */
+    .flow {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+    .flow-step {
+      display: flex;
+      gap: 0;
+      position: relative;
+    }
+    .flow-left {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 56px;
+      flex-shrink: 0;
+    }
+    .step-circle {
+      width: 40px; height: 40px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 15px; color: #fff;
+      flex-shrink: 0; z-index: 1;
+    }
+    .step-line {
+      width: 2px;
+      flex: 1;
+      min-height: 24px;
+      background: var(--border);
+      margin: 0 auto;
+    }
+    .flow-step:last-child .step-line { display: none; }
+
+    .flow-body {
+      flex: 1;
+      padding: 0 0 28px 16px;
+    }
+    .flow-body .title {
+      font-weight: 700; font-size: 15px; color: var(--heading);
+      margin-bottom: 6px; margin-top: 8px;
+    }
+    .flow-body .desc { font-size: 14px; color: var(--gray); margin-bottom: 10px; }
+    .flow-body .detail-box {
+      background: var(--gray-lt);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 13px;
+      color: var(--text);
+    }
+    .flow-body .detail-box code {
+      background: #E2E8F0;
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 12px;
+      font-family: "Fira Code", "Courier New", monospace;
+      color: var(--emerald);
+    }
+    .tag {
+      display: inline-block;
+      border-radius: 5px;
+      font-size: 11px; font-weight: 600;
+      padding: 2px 8px;
+      margin: 2px 2px 2px 0;
+    }
+    .tag-blue   { background: var(--blue-lt);  color: var(--blue); }
+    .tag-green  { background: var(--green-lt); color: var(--green); }
+    .tag-red    { background: var(--red-lt);   color: var(--red); }
+    .tag-amber  { background: var(--amber-lt); color: var(--amber); }
+    .tag-emerald{ background: var(--emerald-lt);color: var(--emerald); }
+
+    /* ── ACTORS ── */
+    .actors-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    @media(max-width:680px){ .actors-grid { grid-template-columns: 1fr; } }
+    .actor-card {
+      border-radius: 12px;
+      padding: 20px 22px;
+      border: 1px solid transparent;
+    }
+    .actor-card .icon { font-size: 28px; margin-bottom: 10px; }
+    .actor-card p { font-size: 13px; margin-top: 6px; }
+    .ac-blue   { background: var(--blue-lt);   border-color: #C7D7F9; color: var(--blue); }
+    .ac-green  { background: var(--green-lt);  border-color: #A7F3D0; color: var(--green); }
+    .ac-amber  { background: var(--amber-lt);  border-color: #FCD68A; color: var(--amber); }
+    .ac-red    { background: var(--red-lt);    border-color: #FECACA; color: var(--red); }
+    .ac-emerald{ background: var(--emerald-lt);border-color: #A7F3D0; color: var(--emerald); }
+    .ac-gray   { background: var(--gray-lt);   border-color: var(--border); color: var(--gray); }
+
+    /* ── ACTION TYPES ── */
+    .vtype-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+    @media(max-width:680px){ .vtype-grid { grid-template-columns: 1fr 1fr; } }
+    .vtype-card {
+      text-align: center; padding: 18px 12px;
+      background: var(--gray-lt); border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+    .vtype-card .emoji { font-size: 30px; margin-bottom: 8px; }
+    .vtype-card .name  { font-size: 13px; font-weight: 600; color: var(--heading); }
+    .vtype-card .sub   { font-size: 11px; color: var(--gray); margin-top: 2px; }
+
+    /* ── DB TABLE ── */
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead th {
+      background: var(--emerald); color: #fff;
+      padding: 10px 14px; text-align: left; font-weight: 600;
+    }
+    thead th:first-child { border-radius: 8px 0 0 0; }
+    thead th:last-child  { border-radius: 0 8px 0 0; }
+    tbody tr:nth-child(even) { background: var(--gray-lt); }
+    tbody td { padding: 9px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    tbody td code {
+      background: #E2E8F0; border-radius: 4px;
+      padding: 1px 5px; font-size: 11px;
+      font-family: "Fira Code", "Courier New", monospace;
+      color: var(--emerald);
+    }
+    .pill {
+      display: inline-block; border-radius: 20px; font-size: 11px;
+      font-weight: 600; padding: 2px 9px;
+    }
+    .pill-blue   { background: var(--blue-lt);  color: var(--blue); }
+    .pill-green  { background: var(--green-lt); color: var(--green); }
+    .pill-red    { background: var(--red-lt);   color: var(--red); }
+    .pill-amber  { background: var(--amber-lt); color: var(--amber); }
+    .pill-emerald{ background: var(--emerald-lt);color: var(--emerald); }
+
+    /* ── ARCH TREE ── */
+    .arch-tree {
+      font-family: "Fira Code", "Courier New", monospace;
+      font-size: 12.5px;
+      background: var(--gray-lt);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px 24px;
+      white-space: pre;
+      overflow-x: auto;
+      color: var(--text);
+      line-height: 1.7;
+    }
+    .arch-tree .h { color: var(--emerald); font-weight: 700; }
+
+    /* ── SECURITY ── */
+    .security-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+    }
+    @media(max-width:680px){ .security-grid { grid-template-columns: 1fr; } }
+    .sec-item {
+      border-left: 4px solid;
+      padding: 14px 16px;
+      border-radius: 0 8px 8px 0;
+      background: var(--gray-lt);
+    }
+    .sec-item h4 { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+    .sec-item p  { font-size: 13px; color: var(--gray); }
+    .sec-item.blue   { border-color: var(--blue); }
+    .sec-item.green  { border-color: var(--green); }
+    .sec-item.red    { border-color: var(--red); }
+    .sec-item.amber  { border-color: var(--amber); }
+    .sec-item.emerald{ border-color: var(--emerald); }
+
+    /* ── NOTIFICATION ── */
+    .notif-row {
+      display: flex; align-items: flex-start; gap: 14px;
+      padding: 14px 0; border-bottom: 1px solid var(--border);
+    }
+    .notif-row:last-child { border-bottom: none; }
+    .notif-icon {
+      width: 36px; height: 36px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; font-size: 16px;
+    }
+    .notif-row .text p { font-size: 13px; color: var(--gray); margin-top: 3px; }
+
+    /* ── FOOTER ── */
+    .page-footer {
+      background: var(--heading); color: rgba(255,255,255,0.5);
+      text-align: center; padding: 24px;
+      font-size: 12px;
+    }
+
+    /* ── DIVIDER ── */
+    .section-divider { height: 40px; }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════ HEADER ════════════════════════════════════════ -->
+<div class="page-header">
+  <div class="badge">iplus Living — Technical Reference</div>
+  <h1>Facility Security &amp; Energy Control — How It Works</h1>
+  <p>How iplus configures hotel-card-style "security arm/disarm" and "power/AC on-off" relay behaviour for amenities and units, piggy-backed on the ME Platform door/lift access flow.</p>
+</div>
+
+<div class="container">
+
+  <!-- ═══ WHAT IS IT ═══ -->
+  <div class="section-label">Overview</div>
+  <h2>What is Facility Security &amp; Energy Control?</h2>
+
+  <div class="card">
+    <p style="font-size:15px; margin-bottom:8px;">
+      <strong>Facility Security &amp; Energy Control</strong> is a configuration layer on top of the <strong>ME Platform</strong> (door/lift access — see <code>me-platform-how-it-works.html</code>) that mimics the classic <strong>hotel room key-card</strong> experience: when a resident's credential is scanned/used at a door, the system can also instruct a relay to <strong>arm/disarm a security zone</strong> and/or <strong>switch on/off power, lighting, or AC</strong> for that room/amenity.
+    </p>
+    <p style="font-size:15px; margin-bottom:20px;">
+      It is configured per <strong>amenity</strong> (facility/room) and gated by two condo-level feature flags. The resulting settings are bundled into the same WebSocket payload that the ME Platform sends for door/lift actions — there is <strong>no separate hardware protocol</strong>; it rides on the existing <code>dooraction</code> flow.
+    </p>
+    <div class="what-grid">
+      <div class="what-item">
+        <div class="icon">🔐</div>
+        <div>
+          <h3>Security On/Off</h3>
+          <p>An amenity/room can have a "security" relay tied to one or more door codes — e.g. arming an alarm zone when the door is locked, disarming when accessed.</p>
+        </div>
+      </div>
+      <div class="what-item">
+        <div class="icon">⚡</div>
+        <div>
+          <h3>Energy On/Off</h3>
+          <p>A separate "energy" relay (named via <code>me_output_name</code>) controls power/AC/lighting for the room — classic "insert card to turn on power" behaviour.</p>
+        </div>
+      </div>
+      <div class="what-item">
+        <div class="icon">🔁</div>
+        <div>
+          <h3>Operation modes</h3>
+          <p>Each relay can be: <strong>Disabled</strong>, <strong>Activate/Release on First Scan</strong> (one-shot), or <strong>Toggle</strong> (every scan flips state).</p>
+        </div>
+      </div>
+      <div class="what-item">
+        <div class="icon">⏳</div>
+        <div>
+          <h3>Grace periods &amp; reminders</h3>
+          <p>A grace period (minutes) delays the energy cutoff after the door closes, with an optional reminder notification before power is cut.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout amber">
+      <h4>⚠ Implementation Status</h4>
+      <p>
+        This feature is <strong>configured end-to-end but only partially wired</strong>. The <code>amenity</code> table columns and the backend admin form (<code>backend/views/amenity/_form.php</code>) are fully built, and the fields are included in the <code>dooraction</code> WebSocket payload sent to the ME Platform gateway. However, <code>common/models/Apiver3.php</code> (which builds the doors/lifts list) currently <strong>defaults all security/energy fields to <code>0</code> (disabled)</strong> rather than reading them from the <code>amenity</code> table — so in practice, the relay instructions reaching the gateway are inert until that lookup is implemented. Treat this as a "schema + UI ready, runtime wiring incomplete" feature.
+      </p>
+    </div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- ═══ WHO IS INVOLVED ═══ -->
+  <div class="section-label">Actors</div>
+  <h2>Who is Involved?</h2>
+
+  <div class="card">
+    <div class="actors-grid">
+      <div class="actor-card ac-emerald">
+        <div class="icon">🏢</div>
+        <h3>Property Management</h3>
+        <p>Enables the security/energy feature flags at condo level (<code>condo_setting</code>), then configures per-amenity behaviour (mode, door codes, grace periods, output names).</p>
+      </div>
+      <div class="actor-card ac-blue">
+        <div class="icon">🛗</div>
+        <h3>ME Platform Gateway</h3>
+        <p>Same WebSocket gateway used for door/lift unlock — receives the security/energy fields alongside the door/lift command and is expected to drive the physical relays.</p>
+      </div>
+      <div class="actor-card ac-red">
+        <div class="icon">🔌</div>
+        <h3>Relay / Output Hardware</h3>
+        <p>Physical relay board wired to room power, AC contactor, lighting circuit, or alarm panel — addressed via <code>me_output_name</code> and door codes (<code>me_door_code</code> / <code>me_energy_door_code</code>).</p>
+      </div>
+      <div class="actor-card ac-green">
+        <div class="icon">🏠</div>
+        <h3>Resident</h3>
+        <p>Triggers the behaviour indirectly — by performing a normal door/lift action (or beacon scan) on a door whose amenity has security/energy enabled.</p>
+      </div>
+      <div class="actor-card ac-amber">
+        <div class="icon">🔔</div>
+        <h3>Reminder Recipient</h3>
+        <p>Receives the configurable "energy cutoff reminder" notification (<code>me_energy_cutoff_reminder_notification_text</code>) before power is switched off after the grace period.</p>
+      </div>
+      <div class="actor-card ac-gray">
+        <div class="icon">📋</div>
+        <h3>Audit Log</h3>
+        <p><code>me_access_log</code> records the underlying door/lift action that carried the security/energy instruction — there's no separate energy-specific log table.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- ═══ STEP BY STEP FLOW ═══ -->
+  <div class="section-label">End-to-End Flow</div>
+  <h2>How It's Configured &amp; Triggered — Step by Step</h2>
+
+  <div class="card">
+    <div class="flow">
+
+      <!-- STEP 1 -->
+      <div class="flow-step">
+        <div class="flow-left">
+          <div class="step-circle" style="background:var(--emerald);">1</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="flow-body">
+          <div class="title">Condo-level feature flags are enabled</div>
+          <div class="desc">Before any amenity can use security/energy control, the condo must have the relevant feature switched on.</div>
+          <div class="detail-box">
+            Table: <code>condo_setting</code><br/>
+            <code>me_door_security_on_off_feature</code> — enables the Security section in the amenity form<br/>
+            <code>me_energy_on_off_feature</code> — enables the Energy section in the amenity form<br/>
+            File: <code>backend/models/Condosetting.php</code>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 2 -->
+      <div class="flow-step">
+        <div class="flow-left">
+          <div class="step-circle" style="background:var(--emerald);">2</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="flow-body">
+          <div class="title">Security behaviour is configured per amenity</div>
+          <div class="desc">For a facility/room, management defines whether entering arms/disarms a security relay, and how.</div>
+          <div class="detail-box">
+            Table: <code>amenity</code> — fields:<br/>
+            <code>me_security_on_off</code> (0/1 enable)<br/>
+            <code>me_security_operation_mode</code> — 0=Disable, 1=Release on First Scan, 2=Toggle<br/>
+            <code>me_door_code</code> — comma-separated door codes this relay applies to<br/>
+            <code>me_security_grace_period</code> — minutes before re-arming<br/>
+            UI: <code>backend/views/amenity/_form.php</code> (lines ~177-239)
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 3 -->
+      <div class="flow-step">
+        <div class="flow-left">
+          <div class="step-circle" style="background:var(--emerald);">3</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="flow-body">
+          <div class="title">Energy behaviour is configured per amenity</div>
+          <div class="desc">Similarly, management defines whether entering switches on power/AC/lighting, and the cutoff behaviour after leaving.</div>
+          <div class="detail-box">
+            Table: <code>amenity</code> — fields:<br/>
+            <code>me_energy_on_off</code> (0/1 enable)<br/>
+            <code>me_energy_operation_mode</code> — 0=Disable, 1=Activate On First Scan, 2=Toggle<br/>
+            <code>me_energy_door_code</code> — door codes for the energy relay<br/>
+            <code>me_output_name</code> — name/identifier of the relay output (power/AC/lighting circuit)<br/>
+            <code>me_energy_grace_period</code> — minutes of delay before cutoff after door closes<br/>
+            <code>me_energy_cutoff_reminder_notification_text</code> / <code>_time</code> — pre-cutoff reminder<br/>
+            UI: <code>backend/views/amenity/_form.php</code> (lines ~240-298)
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 4 -->
+      <div class="flow-step">
+        <div class="flow-left">
+          <div class="step-circle" style="background:var(--blue);">4</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="flow-body">
+          <div class="title">Resident performs a door/lift action</div>
+          <div class="desc">No separate "security/energy" UI exists for residents — the trigger is simply using the door/lift as normal (app tap or beacon scan).</div>
+          <div class="detail-box">
+            API: <code>POST /apiver6/virtual-buttons/dooraction</code><br/>
+            File: <code>apiver6/controllers/VirtualButtonsController.php:342-572</code><br/>
+            Same flow as documented in <code>me-platform-how-it-works.html</code> steps 8-11
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 5 -->
+      <div class="flow-step">
+        <div class="flow-left">
+          <div class="step-circle" style="background:var(--blue);">5</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="flow-body">
+          <div class="title">Security/energy fields are bundled into the WebSocket payload</div>
+          <div class="desc">Alongside the door/lift unlock command, the same JSON payload carries the relay configuration for that door.</div>
+          <div class="detail-box">
+            File: <code>apiver6/controllers/VirtualButtonsController.php:463-499</code><br/>
+            Payload fields: <code>me_security_on_off</code>, <code>me_security_operation_mode</code>, <code>me_security_grace_period</code>, <code>me_door_code</code>, <code>me_energy_on_off</code>, <code>me_energy_operation_mode</code>, <code>me_energy_grace_period</code>, <code>me_energy_door_code</code>, <code>me_output_name</code>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 6 -->
+      <div class="flow-step">
+        <div class="flow-left">
+          <div class="step-circle" style="background:var(--amber);">6</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="flow-body">
+          <div class="title">⚠ Gap: values are not yet sourced from the amenity table</div>
+          <div class="desc">The query layer that builds the doors/lifts list does not currently join to <code>amenity</code> for these fields.</div>
+          <div class="detail-box">
+            File: <code>common/models/Apiver3.php</code> (<code>getAccessibleDoorsAndLifts()</code> and related, ~lines 2287-2640, 2845-3400)<br/>
+            Current behavior: <code>me_security_on_off</code>, <code>me_energy_on_off</code>, etc. are hardcoded to <span class="tag tag-amber">0 (disabled)</span> in the response/payload construction
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 7 -->
+      <div class="flow-step">
+        <div class="flow-left">
+          <div class="step-circle" style="background:var(--green);">7</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="flow-body">
+          <div class="title">ME Platform gateway executes the relay action (intended)</div>
+          <div class="desc">Once wired, the WebSocket gateway / physical ME controller would interpret the security/energy fields and drive the corresponding relay output.</div>
+          <div class="detail-box">
+            Operation mode 1 (Release/Activate on First Scan) → one-shot relay trigger on first valid access<br/>
+            Operation mode 2 (Toggle) → relay flips state on every valid access<br/>
+            Grace period → gateway/hardware delays de-energizing by <code>me_energy_grace_period</code> minutes after door closes
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 8 -->
+      <div class="flow-step">
+        <div class="flow-left">
+          <div class="step-circle" style="background:var(--red);">8</div>
+        </div>
+        <div class="flow-body">
+          <div class="title">Reminder notification before energy cutoff (intended)</div>
+          <div class="desc">If a grace period is configured, a reminder can be sent shortly before the relay de-energizes the room.</div>
+          <div class="detail-box">
+            Fields: <code>me_energy_cutoff_reminder_notification_time</code> (minutes before cutoff), <code>me_energy_cutoff_reminder_notification_text</code> (message template)<br/>
+            No dedicated scheduler/cron for this was found — likely intended to be driven by the ME gateway or a future job
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end .flow -->
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- ═══ OPERATION MODES ═══ -->
+  <div class="section-label">Operation Modes</div>
+  <h2>Security &amp; Energy Relay Modes</h2>
+
+  <div class="card">
+    <div class="vtype-grid">
+      <div class="vtype-card">
+        <div class="emoji">🚫</div>
+        <div class="name">Security: Disable (0)</div>
+        <div class="sub">No security relay action on access</div>
+      </div>
+      <div class="vtype-card">
+        <div class="emoji">🔓</div>
+        <div class="name">Security: Release on First Scan (1)</div>
+        <div class="sub">Disarm/release once on the first valid access</div>
+      </div>
+      <div class="vtype-card">
+        <div class="emoji">🔁</div>
+        <div class="name">Security: Toggle (2)</div>
+        <div class="sub">Each valid access flips armed/disarmed state</div>
+      </div>
+      <div class="vtype-card">
+        <div class="emoji">⏳</div>
+        <div class="name">Security Grace Period</div>
+        <div class="sub">me_security_grace_period — delay before re-arming</div>
+      </div>
+      <div class="vtype-card">
+        <div class="emoji">🚫</div>
+        <div class="name">Energy: Disable (0)</div>
+        <div class="sub">No power/AC relay action on access</div>
+      </div>
+      <div class="vtype-card">
+        <div class="emoji">💡</div>
+        <div class="name">Energy: Activate on First Scan (1)</div>
+        <div class="sub">Power/AC turns on once on first valid access</div>
+      </div>
+      <div class="vtype-card">
+        <div class="emoji">🔁</div>
+        <div class="name">Energy: Toggle (2)</div>
+        <div class="sub">Each valid access flips power on/off</div>
+      </div>
+      <div class="vtype-card">
+        <div class="emoji">⏳</div>
+        <div class="name">Energy Grace Period + Reminder</div>
+        <div class="sub">me_energy_grace_period + cutoff reminder text/time</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- ═══ KEY TABLES ═══ -->
+  <div class="section-label">Database</div>
+  <h2>Key Database Fields</h2>
+
+  <div class="card" style="padding: 0; overflow: hidden;">
+    <table>
+      <thead>
+        <tr>
+          <th>Table.Field</th>
+          <th>Purpose</th>
+          <th>Type</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>condo_setting.me_door_security_on_off_feature</code></td>
+          <td>Condo-level flag — enables the Security configuration section for amenities</td>
+          <td><span class="pill pill-emerald">Feature Flag</span></td>
+        </tr>
+        <tr>
+          <td><code>condo_setting.me_energy_on_off_feature</code></td>
+          <td>Condo-level flag — enables the Energy configuration section for amenities</td>
+          <td><span class="pill pill-emerald">Feature Flag</span></td>
+        </tr>
+        <tr>
+          <td><code>amenity.me_security_on_off</code></td>
+          <td>Per-amenity: is the security relay enabled (0/1)</td>
+          <td><span class="pill pill-blue">Config</span></td>
+        </tr>
+        <tr>
+          <td><code>amenity.me_security_operation_mode</code></td>
+          <td>0=Disable, 1=Release on First Scan, 2=Toggle</td>
+          <td><span class="pill pill-blue">Config</span></td>
+        </tr>
+        <tr>
+          <td><code>amenity.me_door_code</code></td>
+          <td>Comma-separated door codes the security relay applies to</td>
+          <td><span class="pill pill-blue">Config</span></td>
+        </tr>
+        <tr>
+          <td><code>amenity.me_security_grace_period</code></td>
+          <td>Minutes before re-arming after access</td>
+          <td><span class="pill pill-blue">Config</span></td>
+        </tr>
+        <tr>
+          <td><code>amenity.me_energy_on_off</code></td>
+          <td>Per-amenity: is the energy relay enabled (0/1)</td>
+          <td><span class="pill pill-blue">Config</span></td>
+        </tr>
+        <tr>
+          <td><code>amenity.me_energy_operation_mode</code></td>
+          <td>0=Disable, 1=Activate On First Scan, 2=Toggle</td>
+          <td><span class="pill pill-blue">Config</span></td>
+        </tr>
+        <tr>
+          <td><code>amenity.me_energy_door_code</code></td>
+          <td>Comma-separated door codes the energy relay applies to</td>
+          <td><span class="pill pill-blue">Config</span></td>
+        </tr>
+        <tr>
+          <td><code>amenity.me_output_name</code></td>
+          <td>Identifier/name of the physical relay output (power/AC/lighting circuit)</td>
+          <td><span class="pill pill-blue">Config</span></td>
+        </tr>
+        <tr>
+          <td><code>amenity.me_energy_grace_period</code></td>
+          <td>Minutes of delay before cutting power after door closes</td>
+          <td><span class="pill pill-blue">Config</span></td>
+        </tr>
+        <tr>
+          <td><code>amenity.me_energy_cutoff_reminder_notification_time</code></td>
+          <td>Minutes before cutoff to send a reminder</td>
+          <td><span class="pill pill-blue">Config</span></td>
+        </tr>
+        <tr>
+          <td><code>amenity.me_energy_cutoff_reminder_notification_text</code></td>
+          <td>Reminder message template</td>
+          <td><span class="pill pill-blue">Config</span></td>
+        </tr>
+        <tr>
+          <td><code>me_access_log</code></td>
+          <td>Logs the underlying door/lift action that carried the security/energy payload (no dedicated energy log)</td>
+          <td><span class="pill pill-amber">Log</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- ═══ ARCHITECTURE TREE ═══ -->
+  <div class="section-label">Architecture</div>
+  <h2>Data Architecture Overview</h2>
+
+  <div class="card">
+<div class="arch-tree"><span class="h">CONDO-LEVEL FEATURE FLAGS</span>
+condo_setting
+├─ me_door_security_on_off_feature   (enables Security section in amenity form)
+└─ me_energy_on_off_feature          (enables Energy section in amenity form)
+│
+<span class="h">PER-AMENITY CONFIGURATION</span>
+amenity
+├─ SECURITY
+│  ├─ me_security_on_off            (0/1)
+│  ├─ me_security_operation_mode    (0=Disable,1=Release on First Scan,2=Toggle)
+│  ├─ me_door_code                  (door codes this relay applies to)
+│  └─ me_security_grace_period      (minutes before re-arm)
+│
+└─ ENERGY
+   ├─ me_energy_on_off              (0/1)
+   ├─ me_energy_operation_mode      (0=Disable,1=Activate on First Scan,2=Toggle)
+   ├─ me_energy_door_code           (door codes this relay applies to)
+   ├─ me_output_name                (relay output identifier)
+   ├─ me_energy_grace_period        (minutes delay before cutoff)
+   ├─ me_energy_cutoff_reminder_notification_time
+   └─ me_energy_cutoff_reminder_notification_text
+│
+<span class="h">RUNTIME (rides on ME Platform door/lift flow)</span>
+App → POST /virtual-buttons/dooraction
+   → VirtualButtonsController (apiver6)
+   → builds WebSocket payload incl. me_security_*/me_energy_* fields
+        <span class="h">⚠ currently hardcoded to 0/disabled —</span>
+        <span class="h">  not yet joined from amenity table</span>
+   → send to ME Platform WebSocket gateway
+   → (intended) gateway drives security/energy relay output
+   → me_access_log records the door/lift action</div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- ═══ NOTIFICATIONS ═══ -->
+  <div class="section-label">Notifications</div>
+  <h2>Reminder Notification (Energy Cutoff)</h2>
+
+  <div class="card">
+    <div class="notif-row">
+      <div class="notif-icon" style="background:var(--amber-lt);">🔔</div>
+      <div class="text">
+        <h3>Resident — Power/AC About to Be Cut</h3>
+        <p>If <code>me_energy_grace_period</code> and <code>me_energy_cutoff_reminder_notification_time</code> are configured, a reminder using <code>me_energy_cutoff_reminder_notification_text</code> is intended to be sent before the relay de-energizes the room. No dedicated scheduler/cron job for this was found in the codebase — the trigger mechanism is not yet implemented.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- ═══ RELATION TO ME PLATFORM ═══ -->
+  <div class="section-label">Relationship</div>
+  <h2>How This Relates to the ME Platform</h2>
+
+  <div class="card">
+    <div class="security-grid">
+      <div class="sec-item emerald">
+        <h4>Same Transport, No New Protocol</h4>
+        <p>Security/energy fields are appended to the exact same WebSocket payload used for door/lift unlock (<code>dooraction</code>) — there is no separate MQTT topic, REST endpoint, or polling mechanism for this feature.</p>
+      </div>
+      <div class="sec-item blue">
+        <h4>Configured at the Amenity, Not the Door</h4>
+        <p>While <code>me_doors</code>/<code>me_lifts</code> define the physical hardware, security/energy behaviour is configured on the <code>amenity</code> (room/facility) record and linked back via door codes (<code>me_door_code</code>/<code>me_energy_door_code</code>).</p>
+      </div>
+      <div class="sec-item red">
+        <h4>Currently Inert</h4>
+        <p>Until <code>Apiver3::getAccessibleDoorsAndLifts()</code> is updated to read these fields from <code>amenity</code> instead of defaulting to 0, no real relay commands will be triggered — this is the key gap for Genio360 to close (or redesign) if this feature is in scope.</p>
+      </div>
+      <div class="sec-item amber">
+        <h4>Genio360 Consideration</h4>
+        <p>If hotel-style "card activates room power" is a target feature for Genio360, this schema is a reasonable starting reference — but the actual relay protocol (what the ME gateway expects, and how it confirms success) was not found in this codebase and would need to be sourced from the ME hardware vendor's documentation.</p>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end .container -->
+
+<div class="page-footer">
+  iplus Living — Facility Security &amp; Energy Control Technical Reference &nbsp;|&nbsp; Generated 2026 &nbsp;|&nbsp; Rides on ME Platform WebSocket + iplus
+</div>
+
+</body>
+</html>
