@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>LPR — How It Works in iplus</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue:    #1B4FD8;
+      --blue-lt: #EEF2FF;
+      --green:   #0F9C60;
+      --green-lt:#ECFDF5;
+      --red:     #DC2626;
+      --red-lt:  #FEF2F2;
+      --amber:   #D97706;
+      --amber-lt:#FFFBEB;
+      --gray:    #64748B;
+      --gray-lt: #F8FAFC;
+      --border:  #E2E8F0;
+      --text:    #1E293B;
+      --heading: #0F172A;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: var(--text);
+      background: #F1F5F9;
+      line-height: 1.6;
+    }
+
+    /* ── HEADER ── */
+    .page-header {
+      background: linear-gradient(135deg, #0F172A 0%, #1B4FD8 100%);
+      color: #fff;
+      padding: 48px 60px 40px;
+    }
+    .page-header .badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1.2px;
+      padding: 4px 14px;
+      margin-bottom: 18px;
+      text-transform: uppercase;
+    }
+    .page-header h1 { font-size: 38px; font-weight: 800; line-height: 1.15; margin-bottom: 12px; }
+    .page-header p  { font-size: 16px; opacity: 0.8; max-width: 620px; }
+
+    /* ── LAYOUT ── */
+    .container { max-width: 1100px; margin: 0 auto; padding: 48px 24px; }
+
+    /* ── SECTION HEADERS ── */
+    .section-label {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 11px; font-weight: 700; letter-spacing: 1.4px;
+      text-transform: uppercase; color: var(--blue);
+      margin-bottom: 8px;
+    }
+    .section-label::before {
+      content: ''; display: block; width: 28px; height: 2px; background: var(--blue);
+    }
+    h2 { font-size: 24px; font-weight: 700; color: var(--heading); margin-bottom: 24px; }
+    h3 { font-size: 16px; font-weight: 700; color: var(--heading); margin-bottom: 10px; }
+
+    /* ── CARDS ── */
+    .card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 28px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.04);
+    }
+
+    /* ── WHAT IS LPR ── */
+    .what-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-top: 8px;
+    }
+    @media(max-width:680px){ .what-grid { grid-template-columns: 1fr; } }
+
+    .what-item {
+      display: flex; gap: 14px; align-items: flex-start;
+      background: var(--gray-lt);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px 20px;
+    }
+    .what-item .icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: var(--blue-lt); display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; font-size: 20px;
+    }
+    .what-item p { font-size: 14px; color: var(--gray); margin-top: 4px; }
+
+    /* ── FLOW DIAGRAM ── */
+    .flow {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+    .flow-step {
+      display: flex;
+      gap: 0;
+      position: relative;
+    }
+    .flow-left {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 56px;
+      flex-shrink: 0;
+    }
+    .step-circle {
+      width: 40px; height: 40px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 15px; color: #fff;
+      flex-shrink: 0; z-index: 1;
+    }
+    .step-line {
+      width: 2px;
+      flex: 1;
+      min-height: 24px;
+      background: var(--border);
+      margin: 0 auto;
+    }
+    .flow-step:last-child .step-line { display: none; }
+
+    .flow-body {
+      flex: 1;
+      padding: 0 0 28px 16px;
+    }
+    .flow-body .title {
+      font-weight: 700; font-size: 15px; color: var(--heading);
+      margin-bottom: 6px; margin-top: 8px;
+    }
+    .flow-body .desc { font-size: 14px; color: var(--gray); margin-bottom: 10px; }
+    .flow-body .detail-box {
+      background: var(--gray-lt);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 13px;
+      color: var(--text);
+    }
+    .flow-body .detail-box code {
+      background: #E2E8F0;
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 12px;
+      font-family: "Fira Code", "Courier New", monospace;
+      color: var(--blue);
+    }
+    .tag {
+      display: inline-block;
+      border-radius: 5px;
+      font-size: 11px; font-weight: 600;
+      padding: 2px 8px;
+      margin: 2px 2px 2px 0;
+    }
+    .tag-blue   { background: var(--blue-lt);  color: var(--blue); }
+    .tag-green  { background: var(--green-lt); color: var(--green); }
+    .tag-red    { background: var(--red-lt);   color: var(--red); }
+    .tag-amber  { background: var(--amber-lt); color: var(--amber); }
+
+    /* ── ACTORS ── */
+    .actors-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    @media(max-width:680px){ .actors-grid { grid-template-columns: 1fr; } }
+    .actor-card {
+      border-radius: 12px;
+      padding: 20px 22px;
+      border: 1px solid transparent;
+    }
+    .actor-card .icon { font-size: 28px; margin-bottom: 10px; }
+    .actor-card p { font-size: 13px; margin-top: 6px; }
+    .ac-blue  { background: var(--blue-lt);  border-color: #C7D7F9; color: var(--blue); }
+    .ac-green { background: var(--green-lt); border-color: #A7F3D0; color: var(--green); }
+    .ac-amber { background: var(--amber-lt); border-color: #FCD68A; color: var(--amber); }
+    .ac-red   { background: var(--red-lt);   border-color: #FECACA; color: var(--red); }
+    .ac-gray  { background: var(--gray-lt);  border-color: var(--border); color: var(--gray); }
+
+    /* ── VEHICLE TYPES ── */
+    .vtype-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+    @media(max-width:680px){ .vtype-grid { grid-template-columns: 1fr 1fr; } }
+    .vtype-card {
+      text-align: center; padding: 18px 12px;
+      background: var(--gray-lt); border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+    .vtype-card .emoji { font-size: 30px; margin-bottom: 8px; }
+    .vtype-card .name  { font-size: 13px; font-weight: 600; color: var(--heading); }
+    .vtype-card .sub   { font-size: 11px; color: var(--gray); margin-top: 2px; }
+
+    /* ── DB TABLE ── */
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead th {
+      background: var(--blue); color: #fff;
+      padding: 10px 14px; text-align: left; font-weight: 600;
+    }
+    thead th:first-child { border-radius: 8px 0 0 0; }
+    thead th:last-child  { border-radius: 0 8px 0 0; }
+    tbody tr:nth-child(even) { background: var(--gray-lt); }
+    tbody td { padding: 9px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    tbody td code {
+      background: #E2E8F0; border-radius: 4px;
+      padding: 1px 5px; font-size: 11px;
+      font-family: "Fira Code", "Courier New", monospace;
+      color: var(--blue);
+    }
+    .pill {
+      display: inline-block; border-radius: 20px; font-size: 11px;
+      font-weight: 600; padding: 2px 9px;
+    }
+    .pill-blue   { background: var(--blue-lt);  color: var(--blue); }
+    .pill-green  { background: var(--green-lt); color: var(--green); }
+    .pill-red    { background: var(--red-lt);   color: var(--red); }
+    .pill-amber  { background: var(--amber-lt); color: var(--amber); }
+
+    /* ── SECURITY ── */
+    .security-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+    }
+    @media(max-width:680px){ .security-grid { grid-template-columns: 1fr; } }
+    .sec-item {
+      border-left: 4px solid;
+      padding: 14px 16px;
+      border-radius: 0 8px 8px 0;
+      background: var(--gray-lt);
+    }
+    .sec-item h4 { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+    .sec-item p  { font-size: 13px; color: var(--gray); }
+    .sec-item.blue  { border-color: var(--blue); }
+    .sec-item.green { border-color: var(--green); }
+    .sec-item.red   { border-color: var(--red); }
+    .sec-item.amber { border-color: var(--amber); }
+
+    /* ── NOTIFICATION ── */
+    .notif-row {
+      display: flex; align-items: flex-start; gap: 14px;
+      padding: 14px 0; border-bottom: 1px solid var(--border);
+    }
+    .notif-row:last-child { border-bottom: none; }
+    .notif-icon {
+      width: 36px; height: 36px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; font-size: 16px;
+    }
+    .notif-row .text p { font-size: 13px; color: var(--gray); margin-top: 3px; }
+
+    /* ── GENIO CALLOUT ── */
+    .callout {
+      border-radius: 12px;
+      padding: 24px 28px;
+      margin-top: 8px;
+    }
+    .callout.blue  { background: var(--blue-lt);  border: 1px solid #C7D7F9; }
+    .callout.green { background: var(--green-lt); border: 1px solid #A7F3D0; }
+    .callout h3 { font-size: 15px; font-weight: 700; margin-bottom: 10px; }
+    .callout ul { padding-left: 18px; font-size: 14px; color: var(--text); }
+    .callout ul li { margin-bottom: 6px; }
+    .callout ul li strong { color: var(--blue); }
+
+    /* ── FOOTER ── */
+    .page-footer {
+      background: var(--heading); color: rgba(255,255,255,0.5);
+      text-align: center; padding: 24px;
+      font-size: 12px;
+    }
+
+    /* ── DIVIDER ── */
+    .section-divider { height: 40px; }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════ HEADER ════════════════════════════════════════ -->
+<div class="page-header">
+  <div class="badge">iplus Living — Technical Reference</div>
+  <h1>LPR — License Plate Recognition</h1>
+  <p>How the iplus system automatically identifies, tracks, and manages vehicles entering and exiting a condominium using camera-based plate recognition.</p>
+</div>
+
+<div class="container">
+
+  <!-- ═══ WHAT IS LPR ═══ -->
+  <div class="section-label">Overview</div>
+  <h2>What is LPR?</h2>
+
+  <div class="card">
+    <p style="font-size:15px; margin-bottom:20px;">
+      <strong>LPR (License Plate Recognition)</strong> — also called <strong>ANPR (Automatic Number Plate Recognition)</strong> — is an AI-powered camera system that reads vehicle number plates automatically as vehicles pass through entry/exit barriers. In iplus, it is powered by <strong>Hikvision</strong> hardware cameras and is the backbone of automated vehicle access control at condominiums.
+    </p>
+    <div class="what-grid">
+      <div class="what-item">
+        <div class="icon">📷</div>
+        <div>
+          <h3>Camera reads the plate</h3>
+          <p>A Hikvision camera at the gate captures the plate image, runs OCR, and sends the plate text to iplus in real time.</p>
+        </div>
+      </div>
+      <div class="what-item">
+        <div class="icon">🔍</div>
+        <div>
+          <h3>System looks it up</h3>
+          <p>iplus checks the plate against registered residents, active visitor passes, and the blacklist database.</p>
+        </div>
+      </div>
+      <div class="what-item">
+        <div class="icon">🔔</div>
+        <div>
+          <h3>Smart notifications fire</h3>
+          <p>Residents get notified when their visitor arrives. Staff get alerted for blacklisted or suspicious vehicles.</p>
+        </div>
+      </div>
+      <div class="what-item">
+        <div class="icon">📋</div>
+        <div>
+          <h3>Full audit trail logged</h3>
+          <p>Every entry and exit is timestamped, photographed, and stored — giving security a complete vehicle access history.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- ═══ WHO IS INVOLVED ═══ -->
+  <div class="section-label">Actors</div>
+  <h2>Who is Involved?</h2>
+
+  <div class="card">
+    <div class="actors-grid">
+      <div class="actor-card ac-blue">
+        <div class="icon">📷</div>
+        <h3>Hikvision LPR Camera</h3>
+        <p>Physical hardware mounted at entry/exit gates. Captures plate, runs OCR, and sends a webhook to iplus with the plate number and camera IP.</p>
+      </div>
+      <div class="actor-card ac-green">
+        <div class="icon">🏠</div>
+        <h3>Resident</h3>
+        <p>Registers their own vehicle plate. Receives push notifications when a registered visitor's car arrives.</p>
+      </div>
+      <div class="actor-card ac-amber">
+        <div class="icon">🛡️</div>
+        <h3>Security Guard</h3>
+        <p>Uses the iplus Security Guard mobile app to manually register visitor vehicles, log entry/exit, and view the access log.</p>
+      </div>
+      <div class="actor-card ac-red">
+        <div class="icon">🏢</div>
+        <h3>Property Management</h3>
+        <p>Configures the system: sets visit time windows, max visitor vehicles, blacklist vehicles, and notification templates.</p>
+      </div>
+      <div class="actor-card ac-gray" style="grid-column: span 1;">
+        <div class="icon">⚙️</div>
+        <h3>iplus Server</h3>
+        <p>Acts as the integration hub — receives camera webhooks, matches plates, triggers notifications, and stores all logs.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- ═══ STEP BY STEP FLOW ═══ -->
+  <div class="section-label">End-to-End Flow</div>
+  <h2>How It Works — Step by Step</h2>
+
+  <div class="card">
+    <div class="flow">
+
+      <!-- STEP 1 -->
+      <div class="flow-step">
+        <div class="flow-left">
+          <div class="step-circle" style="background:var(--blue);">1</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="flow-body">
+          <div class="title">Vehicle approaches the gate</div>
+          <div class="desc">A car or motorcycle drives up to the condominium entry or exit barrier.</div>
+        </div>
+      </div>
+
+      <!-- STEP 2 -->
+      <div class="flow-step">
+        <div class="flow-left">
+          <div class="step-circle" style="background:var(--blue);">2</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="flow-body">
+          <div class="title">Hikvision camera captures and reads the plate</div>
+          <div class="desc">The LPR camera performs real-time OCR on the number plate. This happens in milliseconds.</div>
+          <div class="detail-box">
+            Camera sends a HTTP POST (XML/JSON) to:<br/>
+            <code>POST /externalsync/hikvisioncamera</code><br/><br/>
+            Payload includes:
+            <span class="tag tag-blue">condoId</span>
+            <span class="tag tag-blue">ipAddress (camera ID)</span>
+            <span class="tag tag-blue">licensePlate</span>
+            <span class="tag tag-blue">plate image file</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 3 -->
+      <div class="flow-step">
+        <div class="flow-left">
+          <div class="step-circle" style="background:var(--blue);">3</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="flow-body">
+          <div class="title">iplus identifies the camera (entry or exit)</div>
+          <div class="desc">The server uses the camera's IP address to look up the camera record and determine its type.</div>
+          <div class="detail-box">
+            Looks up: <code>hikvision_camera</code> table using <code>ipAddress</code><br/><br/>
+            <span class="tag tag-green">camera_type = 1</span> → Entry camera (vehicle coming IN)<br/>
+            <span class="tag tag-amber">camera_type = 2</span> → Exit camera (vehicle going OUT)
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 4 -->
+      <div class="flow-step">
+        <div class="flow-left">
+          <div class="step-circle" style="background:var(--blue);">4</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="flow-body">
+          <div class="title">iplus logs the camera event</div>
+          <div class="desc">Every plate read is immediately recorded regardless of whether the vehicle is known.</div>
+          <div class="detail-box">
+            Stored procedure: <code>hikcameralog_ver3</code><br/>
+            Writes to: <code>hikcameralog</code> table<br/>
+            Fields: license_plate_no, camera_id, condo_id, timestamp, image reference
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 5 -->
+      <div class="flow-step">
+        <div class="flow-left">
+          <div class="step-circle" style="background:#7C3AED);">5</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="flow-body">
+          <div class="title">iplus checks the plate against all databases</div>
+          <div class="desc">The plate number is looked up against three sources simultaneously.</div>
+          <div class="detail-box">
+            <strong>Check 1 — Is it a RESIDENT vehicle?</strong><br/>
+            Table: <code>unit_parking_spot</code> (resident registered vehicles)<br/><br/>
+            <strong>Check 2 — Is it a VISITOR with a valid pass?</strong><br/>
+            Table: <code>unit_visitor_pass</code> (security guard registered visitor vehicles)<br/><br/>
+            <strong>Check 3 — Is it BLACKLISTED?</strong><br/>
+            Table: <code>hikvision_parking_black_list</code>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 6 -->
+      <div class="flow-step">
+        <div class="flow-left">
+          <div class="step-circle" style="background:#7C3AED;">6</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="flow-body">
+          <div class="title">Decision: What happens next?</div>
+          <div class="desc">Based on the lookup result, one of four paths is taken.</div>
+          <div class="detail-box">
+            <span class="tag tag-green">✓ Known Resident Vehicle</span> → Log entry, no notification needed (automatic access)<br/><br/>
+            <span class="tag tag-blue">✓ Valid Visitor Pass</span> → Log entry + notify resident that visitor has arrived<br/><br/>
+            <span class="tag tag-amber">⚠ Repeated Entry</span> → If same vehicle enters within the configured time window → alert staff<br/><br/>
+            <span class="tag tag-red">✗ Blacklisted Vehicle</span> → Log + immediately alert security staff with plate image
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 7 -->
+      <div class="flow-step">
+        <div class="flow-left">
+          <div class="step-circle" style="background:var(--green);">7</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="flow-body">
+          <div class="title">Parking log is created</div>
+          <div class="desc">A detailed record is written with full context of the access event.</div>
+          <div class="detail-box">
+            Entry camera → <code>hikvision_parking_log</code> (new record, status = IN)<br/>
+            Exit camera  → <code>hikvision_parking_out_log</code> (updates existing record, status = OUT)<br/><br/>
+            Stored fields: plate_no, driver_name, unit_no, condo_id, camera_id, entry_time, exit_time, image_url, vehicle_type
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 8 -->
+      <div class="flow-step">
+        <div class="flow-left">
+          <div class="step-circle" style="background:var(--green);">8</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="flow-body">
+          <div class="title">Plate image is stored</div>
+          <div class="desc">The captured plate image is uploaded to cloud storage and linked to the log record.</div>
+          <div class="detail-box">
+            Upload path: <code>s3/condo/{condoId}/unit_visitor_pass_vehicle/</code><br/>
+            ref_table = <code>81</code> (hikvision_parking_log)<br/>
+            ref_table = <code>77</code> (hikcameralog)
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 9 -->
+      <div class="flow-step">
+        <div class="flow-left">
+          <div class="step-circle" style="background:var(--green);">9</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="flow-body">
+          <div class="title">Push notifications are sent</div>
+          <div class="desc">The right people are notified based on the vehicle type and event.</div>
+          <div class="detail-box">
+            Visitor arrives → <strong>Resident</strong> gets: "Your visitor [driver name] has arrived"<br/>
+            Repeated vehicle → <strong>Security staff</strong> gets: alert with plate + image<br/>
+            Blacklist vehicle → <strong>Security staff</strong> gets: urgent alert with plate + image
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end .flow -->
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- ═══ VEHICLE TYPES ═══ -->
+  <div class="section-label">Vehicle Classification</div>
+  <h2>Types of Vehicles Tracked</h2>
+
+  <div class="card">
+    <div class="vtype-grid">
+      <div class="vtype-card">
+        <div class="emoji">🚗</div>
+        <div class="name">Resident Vehicle</div>
+        <div class="sub">Permanent, approved, plate pre-registered by owner</div>
+      </div>
+      <div class="vtype-card">
+        <div class="emoji">👤</div>
+        <div class="name">Visitor Vehicle</div>
+        <div class="sub">Temporary pass created by security guard on arrival</div>
+      </div>
+      <div class="vtype-card">
+        <div class="emoji">🚚</div>
+        <div class="name">Delivery Vehicle</div>
+        <div class="sub">Category: Delivery — short entry window</div>
+      </div>
+      <div class="vtype-card">
+        <div class="emoji">🔧</div>
+        <div class="name">Service Vehicle</div>
+        <div class="sub">Category: Services — maintenance, repairs</div>
+      </div>
+      <div class="vtype-card">
+        <div class="emoji">🛵</div>
+        <div class="name">Motorcycle</div>
+        <div class="sub">Type ID: 1 (two-wheeler)</div>
+      </div>
+      <div class="vtype-card">
+        <div class="emoji">🚖</div>
+        <div class="name">Pick-up / Drop-off</div>
+        <div class="sub">Taxi, Grab — brief access only</div>
+      </div>
+      <div class="vtype-card">
+        <div class="emoji">🚫</div>
+        <div class="name">Blacklisted Vehicle</div>
+        <div class="sub">Flagged — triggers immediate staff alert</div>
+      </div>
+      <div class="vtype-card">
+        <div class="emoji">🔁</div>
+        <div class="name">Repeated Entry</div>
+        <div class="sub">Same plate within configured time window — suspicious</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- ═══ KEY TABLES ═══ -->
+  <div class="section-label">Database</div>
+  <h2>Key Database Tables</h2>
+
+  <div class="card" style="padding: 0; overflow: hidden;">
+    <table>
+      <thead>
+        <tr>
+          <th>Table</th>
+          <th>Purpose</th>
+          <th>Type</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>unit_parking_spot</code></td>
+          <td>Resident's registered vehicles — plate, vehicle type, IU number</td>
+          <td><span class="pill pill-green">Master</span></td>
+        </tr>
+        <tr>
+          <td><code>unit_visitor_pass</code></td>
+          <td>Active visitor passes created by security guard — plate, valid from/to times</td>
+          <td><span class="pill pill-blue">Transactional</span></td>
+        </tr>
+        <tr>
+          <td><code>hikvision_parking</code></td>
+          <td>Main parking records synced with Hikvision hardware</td>
+          <td><span class="pill pill-blue">Transactional</span></td>
+        </tr>
+        <tr>
+          <td><code>hikvision_parking_log</code></td>
+          <td>Every entry/exit event with timestamps, driver info, image reference</td>
+          <td><span class="pill pill-amber">Log</span></td>
+        </tr>
+        <tr>
+          <td><code>hikvision_parking_sync</code></td>
+          <td>Tracks sync acknowledgment between iplus and camera hardware</td>
+          <td><span class="pill pill-amber">Sync</span></td>
+        </tr>
+        <tr>
+          <td><code>hikvision_parking_black_list</code></td>
+          <td>Permanently flagged vehicle plates</td>
+          <td><span class="pill pill-red">Security</span></td>
+        </tr>
+        <tr>
+          <td><code>hikvision_parking_black_log</code></td>
+          <td>Log of every blacklist detection event</td>
+          <td><span class="pill pill-red">Security</span></td>
+        </tr>
+        <tr>
+          <td><code>hikcameralog</code></td>
+          <td>Raw camera event log — every plate read, regardless of match result</td>
+          <td><span class="pill pill-amber">Log</span></td>
+        </tr>
+        <tr>
+          <td><code>hikvision_camera</code></td>
+          <td>Camera configuration — IP address, type (entry/exit), location</td>
+          <td><span class="pill pill-green">Config</span></td>
+        </tr>
+        <tr>
+          <td><code>hikvision_setting</code></td>
+          <td>Per-condo settings — visit windows, max visitors, repeat vehicle threshold</td>
+          <td><span class="pill pill-green">Config</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- ═══ API ENDPOINTS ═══ -->
+  <div class="section-label">API Reference</div>
+  <h2>Key API Endpoints</h2>
+
+  <div class="card" style="padding: 0; overflow: hidden;">
+    <table>
+      <thead>
+        <tr>
+          <th>Endpoint</th>
+          <th>Direction</th>
+          <th>Purpose</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>POST /externalsync/hikvisioncamera</code></td>
+          <td><span class="pill pill-red">Camera → iplus</span></td>
+          <td>Main LPR webhook — camera sends plate + image to iplus on every detection</td>
+        </tr>
+        <tr>
+          <td><code>POST /securityguard/vehicle-add</code></td>
+          <td><span class="pill pill-blue">App → iplus</span></td>
+          <td>Security guard manually registers a visitor vehicle and creates a visitor pass</td>
+        </tr>
+        <tr>
+          <td><code>POST /securityguard/vehicle-list</code></td>
+          <td><span class="pill pill-blue">App → iplus</span></td>
+          <td>Lists all registered and visitor vehicles for the condo on a given date</td>
+        </tr>
+        <tr>
+          <td><code>POST /securityguard/vehicle-access-log</code></td>
+          <td><span class="pill pill-blue">App → iplus</span></td>
+          <td>Full entry/exit access history — filterable by date, plate, vehicle type, status</td>
+        </tr>
+        <tr>
+          <td><code>POST /hikvision/hikvisionparkingadd</code></td>
+          <td><span class="pill pill-blue">App → iplus</span></td>
+          <td>Manually add a vehicle to the Hikvision parking allowlist</td>
+        </tr>
+        <tr>
+          <td><code>PUT [Hikvision Hardware API]</code></td>
+          <td><span class="pill pill-amber">iplus → Camera</span></td>
+          <td>iplus pushes approved plate allowlist to camera hardware (base64 hex encoded)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- ═══ SECURITY FEATURES ═══ -->
+  <div class="section-label">Security</div>
+  <h2>Security &amp; Privacy Features</h2>
+
+  <div class="card">
+    <div class="security-grid">
+      <div class="sec-item blue">
+        <h4>Encrypted Plate Numbers</h4>
+        <p>All plate numbers are stored encrypted in the database using <code>AES_ENCRYPT</code> with a private database key. Plain text plates are never stored at rest.</p>
+      </div>
+      <div class="sec-item red">
+        <h4>Blacklist Management</h4>
+        <p>Property management can flag any plate. Every blacklisted vehicle detection fires an immediate alert to the nominated security staff list with plate image and timestamp.</p>
+      </div>
+      <div class="sec-item amber">
+        <h4>Repeated Entry Detection</h4>
+        <p>If the same plate is detected again within the configured time window (e.g., 30 minutes), it is flagged as a suspicious repeated entry and staff are notified.</p>
+      </div>
+      <div class="sec-item green">
+        <h4>Full Audit Trail</h4>
+        <p>All plate changes (resident updates their vehicle plate) are tracked in <code>unit_parking_spot_before_update</code> with old value, new value, user, and timestamp.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- ═══ NOTIFICATIONS ═══ -->
+  <div class="section-label">Notifications</div>
+  <h2>Who Gets Notified and When</h2>
+
+  <div class="card">
+    <div class="notif-row">
+      <div class="notif-icon" style="background:var(--green-lt);">🏠</div>
+      <div class="text">
+        <h3>Resident — Visitor Arrived</h3>
+        <p>When a vehicle with an active visitor pass enters, the resident who created the pass receives a push notification with the visitor's name and arrival time.</p>
+      </div>
+    </div>
+    <div class="notif-row">
+      <div class="notif-icon" style="background:var(--red-lt);">🚨</div>
+      <div class="text">
+        <h3>Security Staff — Blacklisted Vehicle Detected</h3>
+        <p>Configured staff list (from <code>staff_list_for_black_list_vehicle</code>) receives an urgent push notification with the plate, image, and location. Template: <em>"[vehicle] blacklisted vehicle detected at [condoname]"</em></p>
+      </div>
+    </div>
+    <div class="notif-row">
+      <div class="notif-icon" style="background:var(--amber-lt);">⚠️</div>
+      <div class="text">
+        <h3>Security Staff — Repeated Vehicle Entry</h3>
+        <p>If the same plate enters more than once within the time window, staff are notified. Template configurable per condo in <code>hikvision_setting</code>.</p>
+      </div>
+    </div>
+    <div class="notif-row">
+      <div class="notif-icon" style="background:var(--blue-lt);">📧</div>
+      <div class="text">
+        <h3>Resident — Vehicle Registration Approved</h3>
+        <p>When management approves a resident's parking spot / vehicle registration, a push and email notification is sent via <code>security_add_vehicle_notification</code> stored procedure.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- ═══ CONDO SETTINGS ═══ -->
+  <div class="section-label">Configuration</div>
+  <h2>Condo-Level Settings (Managed by Property Manager)</h2>
+
+  <div class="card" style="padding: 0; overflow: hidden;">
+    <table>
+      <thead>
+        <tr>
+          <th>Setting</th>
+          <th>What It Controls</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>HikVision_start_time_range</code> / <code>end_time_range</code></td>
+          <td>Daily visitor vehicle access window (e.g., 07:00 – 22:00)</td>
+        </tr>
+        <tr>
+          <td><code>HikVision_service_start/end_time_range</code></td>
+          <td>Separate window for service/delivery vehicles</td>
+        </tr>
+        <tr>
+          <td><code>HikVision_visitor_vehicle_allow</code></td>
+          <td>Maximum concurrent visitor vehicles allowed per unit</td>
+        </tr>
+        <tr>
+          <td><code>HikVision_repeated_vehicle_time</code></td>
+          <td>Minutes before a second entry is flagged as "repeated" (e.g., 30 mins)</td>
+        </tr>
+        <tr>
+          <td><code>staff_message_for_black_list_vehicle</code></td>
+          <td>Custom notification message template for blacklist alerts</td>
+        </tr>
+        <tr>
+          <td><code>staff_list_for_black_list_vehicle</code></td>
+          <td>Comma-separated user IDs of staff who receive blacklist alerts</td>
+        </tr>
+        <tr>
+          <td><code>notification_to_resident_for_drive_in_visitor</code></td>
+          <td>Toggle: whether residents get notified on visitor arrival (on/off per condo)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- ═══ VISITOR PASS FLOW ═══ -->
+  <div class="section-label">Visitor Flow</div>
+  <h2>How a Visitor's Vehicle Gets a Pass</h2>
+
+  <div class="card">
+    <p style="font-size:14px; color:var(--gray); margin-bottom:20px;">
+      The LPR camera can only recognise a visitor's vehicle if a pass has been created for it first. Here is how that happens:
+    </p>
+    <div class="flow">
+      <div class="flow-step">
+        <div class="flow-left">
+          <div class="step-circle" style="background:var(--amber);">A</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="flow-body">
+          <div class="title">Resident pre-registers visitor (optional)</div>
+          <div class="desc">Resident can create a visitor pass in advance from the iplus app — entering the visitor's name, plate number, and valid dates.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-left">
+          <div class="step-circle" style="background:var(--amber);">B</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="flow-body">
+          <div class="title">Security guard registers vehicle at gate</div>
+          <div class="desc">More commonly, the security guard uses the iplus Security Guard app when a visitor arrives — collecting plate, vehicle type, driver name, contact, and purpose.</div>
+          <div class="detail-box">
+            API: <code>POST /securityguard/vehicle-add</code><br/>
+            Calls stored procedure: <code>security_vehicle_add_ver2</code><br/>
+            Creates: <code>unit_visitor_pass</code> record + <code>hikvision_parking</code> entry<br/>
+            Pushes plate to Hikvision hardware allowlist automatically
+          </div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-left">
+          <div class="step-circle" style="background:var(--amber);">C</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="flow-body">
+          <div class="title">iplus syncs plate to camera hardware</div>
+          <div class="desc">The approved plate is pushed to the Hikvision camera's allowlist so the barrier can open automatically on next entry.</div>
+          <div class="detail-box">
+            Direction: <span class="tag tag-amber">iplus → Hikvision Camera (PUT request)</span><br/>
+            Plate encoded as base64 hex for camera API compatibility<br/>
+            Sync tracked in: <code>hikvision_parking_sync</code> (sync_acknowledgment: 0=pending, 1=synced, 2=processed)
+          </div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-left">
+          <div class="step-circle" style="background:var(--green);">D</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="flow-body">
+          <div class="title">Visitor's vehicle is recognised on arrival</div>
+          <div class="desc">When the vehicle next passes the camera, the plate matches the allowlist, the barrier opens, and the resident is notified.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- ═══ GENIO RELEVANCE ═══ -->
+  <div class="section-label">Genio Strategy</div>
+  <h2>LPR in the Context of Genio</h2>
+
+  <div class="callout blue">
+    <h3>Singapore (iplus + Hikvision)</h3>
+    <ul>
+      <li><strong>Existing system is mature</strong> — Hikvision LPR cameras are already deployed, webhook integration is live, and full audit logging is operational.</li>
+      <li>AI chatbot for Genio Singapore can query the LPR access logs to answer resident questions like "When did my visitor arrive?" or "What is my vehicle entry history?"</li>
+      <li>Blacklist and repeated entry alerts can be surfaced in the Genio AI chat as real-time security notifications.</li>
+    </ul>
+  </div>
+
+  <div style="height:14px;"></div>
+
+  <div class="callout green">
+    <h3>Rest of World (Genio Global)</h3>
+    <ul>
+      <li><strong>Not all regions will have Hikvision</strong> — Genio's LPR module should be designed as a <strong>camera-agnostic webhook receiver</strong>: any LPR camera that can POST a plate number should be supported.</li>
+      <li>The data model (visitor pass, parking log, blacklist, entry/exit event) should be replicated in the Genio NestJS backend as a portable module.</li>
+      <li>Fallback: <strong>manual plate entry by security guard</strong> (like the current <code>vehicle-add</code> flow) must always work even without hardware cameras.</li>
+      <li>For regions without physical cameras, the AI chatbot can handle visitor pre-registration digitally — resident invites visitor, system generates a QR or OTP at the gate instead of plate recognition.</li>
+    </ul>
+  </div>
+
+</div><!-- end .container -->
+
+<div class="page-footer">
+  iplus Living — LPR Technical Reference &nbsp;|&nbsp; Generated 2026 &nbsp;|&nbsp; Powered by Hikvision + iplus
+</div>
+
+</body>
+</html>
+C:\Users\r.sivasubramanian\iplus-living-web\lpr-how-it-works.html
