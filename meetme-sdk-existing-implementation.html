@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MeetMe Intercom – Full System Flow (Web + Android)</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f2f5;color:#222;font-size:14px}
+  header{background:linear-gradient(135deg,#0d1b6e,#1a3a8f);color:#fff;padding:30px 42px}
+  header h1{font-size:26px;font-weight:700}
+  header p{margin-top:7px;color:#aabfff;font-size:13px}
+  nav{display:flex;gap:7px;flex-wrap:wrap;padding:11px 42px;background:#fff;border-bottom:2px solid #dde2f5;position:sticky;top:0;z-index:20}
+  nav a{font-size:11.5px;color:#0d1b6e;text-decoration:none;padding:4px 11px;border-radius:20px;border:1px solid #b0bef5;white-space:nowrap}
+  nav a:hover{background:#e8eaf6}
+  .wrap{max-width:1080px;margin:28px auto;padding:0 20px}
+  section{background:#fff;border-radius:10px;padding:26px 32px;margin-bottom:24px;box-shadow:0 1px 5px rgba(0,0,0,.08)}
+  section>h2{font-size:17px;color:#0d1b6e;border-bottom:2px solid #e8eaf6;padding-bottom:9px;margin-bottom:16px}
+  h3{font-size:13.5px;color:#1a3a8f;margin:16px 0 7px;font-weight:700}
+  p{line-height:1.75;color:#444;margin-bottom:6px}
+  ul,ol{padding-left:20px}
+  li{line-height:1.85;color:#444}
+  code{background:#e8eaf6;padding:1px 6px;border-radius:4px;font-size:12px;color:#1a3a8f;font-family:Consolas,monospace}
+  pre{background:#1a2236;color:#cdd5f0;padding:14px 18px;border-radius:8px;font-size:12px;overflow-x:auto;line-height:1.7;margin:10px 0}
+  pre .c{color:#546e8a} pre .k{color:#80cbc4} pre .s{color:#a5d6a7} pre .m{color:#ef9a9a} pre .fn{color:#ffcc80}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+  th{background:#0d1b6e;color:#fff;padding:9px 12px;text-align:left}
+  td{padding:8px 12px;border-bottom:1px solid #e8eaf6;vertical-align:top}
+  tr:nth-child(even) td{background:#f7f8fd}
+  td code{font-size:11.5px}
+
+  .flow{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:14px 0}
+  .box{padding:9px 14px;border-radius:8px;font-size:11.5px;font-weight:700;text-align:center;min-width:100px;line-height:1.4}
+  .bx-pan{background:#fce4ec;color:#880e4f;border:2px solid #f48fb1}
+  .bx-sip{background:#fff3e0;color:#e65100;border:2px solid #ffb74d}
+  .bx-api{background:#e3f2fd;color:#0d47a1;border:2px solid #90caf9}
+  .bx-db{background:#f3e5f5;color:#4a148c;border:2px solid #ce93d8}
+  .bx-fcm{background:#e0f7fa;color:#006064;border:2px solid #80deea}
+  .bx-and{background:#e8f5e9;color:#1b5e20;border:2px solid #81c784}
+  .bx-sdk{background:#fffde7;color:#f57f17;border:2px solid #fff176}
+  .bx-crm{background:#ede7f6;color:#4527a0;border:2px solid #b39ddb}
+  .bx-mq{background:#fbe9e7;color:#bf360c;border:2px solid #ffab91}
+  .arrow{font-size:17px;color:#90a4ae;flex-shrink:0}
+
+  .steps{display:flex;flex-direction:column;gap:12px;margin-top:12px}
+  .step{display:flex;gap:13px}
+  .snum{min-width:27px;height:27px;background:#0d1b6e;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700;flex-shrink:0;margin-top:2px}
+  .sbody strong{font-size:13px;color:#0d1b6e;display:block;margin-bottom:3px}
+  .sbody p{font-size:13px;margin:0}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px}
+  @media(max-width:680px){.grid2{grid-template-columns:1fr}}
+  .card{background:#f7f8fd;border:1px solid #dde2f5;border-radius:8px;padding:14px}
+  .card h4{font-size:13px;color:#0d1b6e;margin-bottom:8px;font-weight:700}
+
+  .tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;margin:1px}
+  .tag-w{background:#e3f2fd;color:#0d47a1}
+  .tag-a{background:#e8f5e9;color:#1b5e20}
+  .tag-b{background:#fff3e0;color:#e65100}
+  .tag-d{background:#f3e5f5;color:#4a148c}
+
+  .note{background:#fffde7;border-left:4px solid #f9a825;padding:11px 15px;border-radius:4px;font-size:13px;margin-top:12px}
+  .note strong{color:#e65100}
+  .divider{border:none;border-top:2px dashed #e0e4f0;margin:20px 0}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>MeetMe Intercom – Full System Flow</h1>
+  <p>Consolidated from iplus-living-web &amp; iplus-living-android &nbsp;|&nbsp; Panel · SIP Server · API · MQTT · Android SDK</p>
+</header>
+
+<nav>
+  <a href="#overview">1. Overview</a>
+  <a href="#arch">2. Architecture</a>
+  <a href="#provision">3. SIP Provisioning</a>
+  <a href="#panel-config">4. Panel Config</a>
+  <a href="#incoming">5. Incoming Call</a>
+  <a href="#outgoing">6. Outgoing Call</a>
+  <a href="#unlock">7. Door Unlock</a>
+  <a href="#video">8. Video Stream</a>
+  <a href="#licence">9. Licence</a>
+  <a href="#mqtt">10. MQTT / Heartbeat</a>
+  <a href="#cron">11. Cron Jobs</a>
+  <a href="#db">12. DB Tables</a>
+  <a href="#classes">13. All Classes</a>
+</nav>
+
+<div class="wrap">
+
+<!-- 1. OVERVIEW -->
+<section id="overview">
+  <h2>1. Overview</h2>
+  <p><strong>MeetMe</strong> is the intercom system built into iPlus Living. It connects physical <strong>door panels</strong> (installed at building entrances) to <strong>resident Android phones</strong> via SIP-based video calling, using the <strong>Linphone SDK</strong>. The backend (PHP/Yii2) handles panel configuration, SIP account provisioning, licence management, door relay commands via MQTT, and push notification wake-up via FCM.</p>
+
+  <div class="grid2" style="margin-top:16px">
+    <div class="card">
+      <h4>Web Side (iplus-living-web)</h4>
+      <ul>
+        <li>Panel configuration &amp; unit mapping (admin backend)</li>
+        <li>SIP server settings (<code>meet_server_setting</code>)</li>
+        <li>MeetMe licence management &amp; renewal payments</li>
+        <li>Door relay/unlock via MQTT broker</li>
+        <li>API endpoints for Android app to call</li>
+        <li>Cron jobs: heartbeat, MQTT queue, licence reminders</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Android Side (iplus-living-android)</h4>
+      <ul>
+        <li>Linphone SDK 5.4.22 — full SIP stack</li>
+        <li><code>LinphoneService</code> — persistent foreground service</li>
+        <li>FCM wake-up for incoming panel calls</li>
+        <li>Video rendering via TextureView / OpenGL</li>
+        <li>Door unlock REST call on panel relay</li>
+        <li>Outgoing calls to panels and guard units</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 2. ARCHITECTURE -->
+<section id="arch">
+  <h2>2. Full Architecture</h2>
+
+  <div class="flow">
+    <div class="box bx-pan">🚪 Door Panel<br/><small>SIP UA + MQTT</small></div>
+    <div class="arrow">⇄</div>
+    <div class="box bx-sip">SIP Proxy<br/><small>sip.fermax.com</small></div>
+    <div class="arrow">⇄</div>
+    <div class="box bx-sdk">Linphone SDK<br/><small>Android</small></div>
+    <div class="arrow">⇄</div>
+    <div class="box bx-and">📱 Resident App<br/><small>iPlus Android</small></div>
+  </div>
+  <div class="flow">
+    <div class="box bx-and">Android App</div>
+    <div class="arrow">REST →</div>
+    <div class="box bx-api">apiver6<br/><small>IntercomController</small></div>
+    <div class="arrow">⇄</div>
+    <div class="box bx-db">MySQL DB<br/><small>meet_* tables</small></div>
+  </div>
+  <div class="flow">
+    <div class="box bx-api">apiver6 / CronController</div>
+    <div class="arrow">HTTP →</div>
+    <div class="box bx-mq">MQTT Broker<br/><small>3.0.204.184:1883</small></div>
+    <div class="arrow">MQTT →</div>
+    <div class="box bx-pan">🚪 Door Panel<br/><small>remoteOpen / syncFace</small></div>
+  </div>
+  <div class="flow">
+    <div class="box bx-sip">SIP Proxy</div>
+    <div class="arrow">FCM push →</div>
+    <div class="box bx-fcm">Firebase FCM</div>
+    <div class="arrow">→</div>
+    <div class="box bx-and">Android App<br/><small>wakes LinphoneService</small></div>
+  </div>
+  <div class="flow">
+    <div class="box bx-api">apiver6</div>
+    <div class="arrow">REST →</div>
+    <div class="box bx-crm">Fermax CRM API<br/><small>licence + payment</small></div>
+  </div>
+
+  <table style="margin-top:18px">
+    <tr><th>Layer</th><th>Technology</th><th>Role in Intercom</th></tr>
+    <tr><td>Door Panel</td><td>SIP User Agent + MQTT client</td><td>Sends SIP INVITE on visitor press; executes relay unlock on MQTT command</td></tr>
+    <tr><td>SIP Proxy Server</td><td>sip.fermax.com</td><td>Routes SIP INVITE to resident's registered SIP account; triggers FCM push</td></tr>
+    <tr><td>Linphone SDK</td><td>org.linphone 5.4.22 (Android C library)</td><td>Full SIP stack — registers account, handles call, decodes video, plays audio</td></tr>
+    <tr><td>API Backend</td><td>apiver6 / IntercomController.php (Yii2)</td><td>Serves panel list, SIP config, relay data; receives door unlock request</td></tr>
+    <tr><td>MQTT Broker</td><td>Mosquitto @ 3.0.204.184:1883</td><td>Receives unlock commands from API; forwards to panel over MQTT topic</td></tr>
+    <tr><td>FCM</td><td>Firebase Cloud Messaging</td><td>Wakes Android app when panel calls (SIP proxy pushes via FCM token)</td></tr>
+    <tr><td>Fermax CRM</td><td>REST API @ 13.250.181.95</td><td>Manages MeetMe licence subscriptions, payments, SIP credential provisioning</td></tr>
+    <tr><td>MySQL DB</td><td>meet_* tables + stored procedures</td><td>Stores panel config, unit mapping, SIP settings, licence data, MQTT queue</td></tr>
+  </table>
+</section>
+
+<!-- 3. SIP PROVISIONING -->
+<section id="provision">
+  <h2>3. SIP Account Provisioning (First-Time Setup)</h2>
+  <p>Before any intercom call can happen, each resident's unit needs a <strong>SIP account</strong> registered on the SIP proxy server. This is provisioned via the MeetMe licence system.</p>
+
+  <div class="steps">
+    <div class="step">
+      <div class="snum">1</div>
+      <div class="sbody">
+        <strong>Admin activates MeetMe licence for a unit (Web Backend)</strong>
+        <p>Admin creates a licence in <code>meet_me_licence_master</code> and links it to a unit in <code>meet_me_licence</code>. The <code>licence_number</code> is AES-encrypted in DB.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="snum">2</div>
+      <div class="sbody">
+        <strong>Fermax CRM provisions SIP credentials</strong>
+        <p>API calls Fermax CRM: <code>meet-me-licence-renewal/getsubscription</code>. CRM returns SIP credentials: <code>grandstream_server_username</code>, <code>grandstream_server_password</code>, <code>grandstream_server_domain</code>, <code>licence_password</code>.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="snum">3</div>
+      <div class="sbody">
+        <strong>Android app fetches SIP config on login</strong>
+        <p><code>HomeFragment</code> calls <code>IntercomController::actionIntercomconfiguration()</code>. API executes SP <code>meet_server_setting_get_ver3</code> and <code>meet_panel_get_list_ver3</code>. Returns SIP URL, domain, panel list, guard list.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="snum">4</div>
+      <div class="sbody">
+        <strong>Linphone SDK registers SIP account</strong>
+        <p><code>LinphoneManager</code> calls <code>core.createAuthInfo()</code> with SIP credentials and <code>core.addProxyConfig()</code> with the SIP server URL. Linphone sends SIP REGISTER to <code>sip.fermax.com</code>.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="snum">5</div>
+      <div class="sbody">
+        <strong>FCM token sent to SIP server</strong>
+        <p><code>FirebasePushHelper</code> obtains FCM token → stored in <code>LinphonePreferences</code> → passed to SIP proxy so it can push-wake the app on an incoming call. <code>XmlRpcHelper</code> handles account expiry renewal via XML-RPC against the provisioning server.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="flow" style="margin-top:14px">
+    <div class="box bx-api">Admin activates<br/>licence (Web)</div>
+    <div class="arrow">→</div>
+    <div class="box bx-crm">Fermax CRM<br/>issues SIP creds</div>
+    <div class="arrow">→</div>
+    <div class="box bx-api">actionIntercomconfiguration<br/>returns SIP URL</div>
+    <div class="arrow">→</div>
+    <div class="box bx-sdk">LinphoneManager<br/>SIP REGISTER</div>
+    <div class="arrow">→</div>
+    <div class="box bx-sip">SIP Proxy<br/>stores FCM token</div>
+  </div>
+</section>
+
+<!-- 4. PANEL CONFIG -->
+<section id="panel-config">
+  <h2>4. Panel Configuration (Web Admin → API → App)</h2>
+
+  <h3>Admin Sets Up a Panel (Web Backend)</h3>
+  <p>Managed via <code>backend/controllers/IntercomController.php → actionCreate()</code>:</p>
+  <ul>
+    <li>Creates record in <code>meet_panel</code> table with UUID <code>panel_id</code></li>
+    <li>Maps panel to units via <code>meet_panel_unit</code> table</li>
+    <li>Configures relay names/DTMF tones: <code>relay_1…4</code>, <code>dtmf_tone_1…4</code>, <code>main_relay</code>, <code>panel_mode</code> (1=2 relays, 2=4 relays)</li>
+    <li>Sets SIP server settings in <code>meet_server_setting</code>: <code>domain</code>, <code>sip_url</code>, <code>is_check_sip_url</code></li>
+    <li>Clears cache keys: <code>meet_panel_{type}_{condo_id}_{unit_id}</code> and <code>intercomconfiguration_{condo_id}_{unit_id}</code></li>
+  </ul>
+
+  <h3>Panel Bulk Import via CSV</h3>
+  <p><code>actionPanelSettingsImport()</code> → calls SP <code>intercom_panel_settings_import</code> with XML payload. CSV columns: Panel Name, Unit Number, Extension/Licence Number, Default Display Name.</p>
+
+  <h3>App Fetches Panel List</h3>
+  <pre><span class="c">// Android: HomeFragment</span>
+NetworkManager.addRequest(RequestBuilder.getIntercomConfig(condoId), ...);
+
+<span class="c">// API: IntercomController::actionIntercomconfiguration()</span>
+CALL meet_server_setting_get_ver3(:private_db_key, :company_id, :condo_id, ...)
+CALL meet_panel_get_list_ver3(:private_db_key, :company_id, :condo_id, :unit_id, panel_type=1, ...)
+CALL meet_panel_get_list_ver3(:private_db_key, :company_id, :condo_id, :unit_id, panel_type=2, ...)
+<span class="c">// Returns: panel list, guard list, SIP URL — cached 48 hours</span></pre>
+
+  <h3>Panel Types</h3>
+  <table>
+    <tr><th>panel_type</th><th>Meaning</th><th>Shown In App</th></tr>
+    <tr><td>1</td><td>Door Panel (entrance)</td><td>Panel tab in HomeFragment</td></tr>
+    <tr><td>2</td><td>Guard Unit</td><td>Guard tab in HomeFragment</td></tr>
+  </table>
+</section>
+
+<!-- 5. INCOMING CALL -->
+<section id="incoming">
+  <h2>5. Incoming Call Flow (Panel → Resident Phone)</h2>
+  <p>A visitor presses the door panel button. This is the full sequence from panel to resident screen.</p>
+
+  <div class="steps">
+    <div class="step">
+      <div class="snum">1</div>
+      <div class="sbody">
+        <strong>Panel sends SIP INVITE</strong>
+        <p>The door panel (a SIP User Agent) dials the resident's SIP address (derived from <code>licence_number</code>). SIP INVITE is sent to SIP proxy at <code>sip.fermax.com</code>.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="snum">2</div>
+      <div class="sbody">
+        <strong>SIP Proxy looks up FCM token</strong>
+        <p>Proxy finds the resident's registered SIP account and retrieves the FCM token that was registered by <code>FirebasePushHelper</code> at login.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="snum">3</div>
+      <div class="sbody">
+        <strong>FCM push delivered to Android device</strong>
+        <p><code>MyFirebaseMessagingService.onMessageReceived()</code> receives the push. It detects the <code>isfromfermax</code> flag and routes to MeetMe's own <code>FirebaseMessagingService</code>.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="snum">4</div>
+      <div class="sbody">
+        <strong>LinphoneService starts / wakes up</strong>
+        <p>If <code>LinphoneService</code> is not running, it is started with a <code>PushNotification</code> intent. <code>core.ensureRegistered()</code> re-registers the SIP account so the INVITE can be received.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="snum">5</div>
+      <div class="sbody">
+        <strong>Linphone Core receives SIP INVITE</strong>
+        <p><code>CoreListenerStub.onCallStateChanged()</code> fires with state <code>Call.State.IncomingReceived</code>. <code>NotificationsManager</code> shows a call notification or launches <code>CallIncomingActivity</code>.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="snum">6</div>
+      <div class="sbody">
+        <strong>Resident sees incoming call screen</strong>
+        <p><code>CallIncomingActivity</code> displays the panel's display name, a video preview, and Accept / Decline buttons.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="snum">7</div>
+      <div class="sbody">
+        <strong>Resident accepts → call.accept()</strong>
+        <p>Linphone sends SIP 200 OK → SIP ACK from panel. Call state moves to <code>Connected</code> then <code>StreamsRunning</code>. RTP audio and video streams begin flowing.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="snum">8</div>
+      <div class="sbody">
+        <strong>CallActivity opens with live video</strong>
+        <p>Video surfaces are attached to Linphone Core via <code>setNativeVideoWindowId()</code>. Panel's video renders on screen. Audio routes to speaker. Resident can now speak to visitor and see them.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="snum">9</div>
+      <div class="sbody">
+        <strong>Resident declines → call.terminate()</strong>
+        <p>Linphone sends SIP 486 Busy / 603 Decline. Call ends. Logged in <code>HistoryFragment</code>. <code>NotificationBroadcastReceiver</code> also handles decline from notification action button.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="flow" style="margin-top:14px;flex-wrap:wrap">
+    <div class="box bx-pan">🚪 Panel<br/>SIP INVITE</div>
+    <div class="arrow">→</div>
+    <div class="box bx-sip">SIP Proxy<br/>lookup FCM</div>
+    <div class="arrow">→</div>
+    <div class="box bx-fcm">FCM Push<br/>to device</div>
+    <div class="arrow">→</div>
+    <div class="box bx-sdk">LinphoneService<br/>ensureRegistered</div>
+    <div class="arrow">→</div>
+    <div class="box bx-and">CallIncomingActivity<br/>Accept/Decline</div>
+    <div class="arrow">→</div>
+    <div class="box bx-and">CallActivity<br/>Live Video</div>
+  </div>
+</section>
+
+<!-- 6. OUTGOING CALL -->
+<section id="outgoing">
+  <h2>6. Outgoing Call Flow (Resident → Panel / Guard)</h2>
+  <p>Resident initiates a call to a door panel or guard from the app.</p>
+
+  <div class="steps">
+    <div class="step">
+      <div class="snum">1</div>
+      <div class="sbody">
+        <strong>HomeFragment displays panel / guard list</strong>
+        <p>Data from <code>actionIntercomconfiguration()</code> populates <code>PanelGuardListAdapter</code>. Two tabs: Panel (type 1) and Guard (type 2).</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="snum">2</div>
+      <div class="sbody">
+        <strong>User taps a panel</strong>
+        <p>Adapter calls <code>LinphoneActivity.instance().setAddresGoToDialerAndCall(licence_number, display_name)</code>. Flurry event logged: <code>FLURRY_EVENT_INTERCOM_MAKE_CALL_PANEL</code> or <code>FLURRY_EVENT_INTERCOM_MAKE_CALL_GUARD</code>.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="snum">3</div>
+      <div class="sbody">
+        <strong>CallManager.inviteAddress()</strong>
+        <p>Creates <code>CallParams</code> from Core. <code>BandwidthManager.updateWithProfileSettings()</code> decides if video is possible. Sets <code>recordFile</code> path. Calls <code>core.inviteAddressWithParams(address, params)</code>.</p>
+        <pre>CallParams params = lc.createCallParams(<span class="m">null</span>);
+getBandwidthManager().updateWithProfileSettings(params);
+params.setVideoEnabled(videoEnabled && params.isVideoEnabled());
+params.setRecordFile(recordFile);
+lc.inviteAddressWithParams(lAddress, params);</pre>
+      </div>
+    </div>
+    <div class="step">
+      <div class="snum">4</div>
+      <div class="sbody">
+        <strong>SIP INVITE sent to SIP proxy → Panel rings</strong>
+        <p><code>CallOutgoingActivity</code> shows a ringing screen while state is <code>OutgoingRinging</code>. Resident can cancel at this point via <code>call.terminate()</code>.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="snum">5</div>
+      <div class="sbody">
+        <strong>Panel answers → StreamsRunning</strong>
+        <p>State moves to <code>Connected</code> → <code>StreamsRunning</code>. <code>CallActivity</code> opens with live two-way video and audio to the panel.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="flow" style="margin-top:14px">
+    <div class="box bx-and">HomeFragment<br/>Select Panel</div>
+    <div class="arrow">→</div>
+    <div class="box bx-sdk">CallManager<br/>inviteAddress()</div>
+    <div class="arrow">→ SIP INVITE →</div>
+    <div class="box bx-sip">SIP Proxy</div>
+    <div class="arrow">→</div>
+    <div class="box bx-pan">🚪 Panel<br/>Rings</div>
+    <div class="arrow">→ 200 OK →</div>
+    <div class="box bx-and">CallActivity<br/>Live Video</div>
+  </div>
+</section>
+
+<!-- 7. DOOR UNLOCK -->
+<section id="unlock">
+  <h2>7. Door Unlock / Relay Command Flow</h2>
+  <p>During an active call, the resident taps the unlock button. The door relay is triggered via a chain: App → API → MQTT Broker → Panel.</p>
+
+  <div class="steps">
+    <div class="step">
+      <div class="snum">1</div>
+      <div class="sbody">
+        <strong>App fetches relay config</strong>
+        <p>Android calls <code>IntercomController::actionPanelrelay(panel_number, condoId)</code>. API queries <code>meet_panel</code> table directly via <code>meetPanelRelayData()</code> and returns relay names, DTMF tones, panel mode.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="snum">2</div>
+      <div class="sbody">
+        <strong>Resident selects relay (unlock button)</strong>
+        <p>App shows relay options (up to 4 relays in 4-relay mode, 2 in 2-relay mode). Resident taps the desired unlock button.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="snum">3</div>
+      <div class="sbody">
+        <strong>App sends unlock request to API</strong>
+        <p>REST POST to iPlus API with selected relay and panel info.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="snum">4</div>
+      <div class="sbody">
+        <strong>API builds MQTT payload and calls MQTT broker</strong>
+        <p><code>CommonComponent::callMqtt()</code> POSTs the unlock command to MQTT broker at <code>http://3.0.204.184/data/mqtt-app/mqtt</code>. MQTT action: <code>remoteOpen</code>. The request is also queued in <code>meet_fr_mqtt_call</code> table for retry tracking.</p>
+        <pre>$post_url = <span class="s">"http://3.0.204.184/data/mqtt-app/mqtt"</span>;
+<span class="c">// MQTT payload includes: topic, panel_id, relay selection, dtmf_tone</span>
+<span class="c">// mqtt_action = 'remoteOpen'</span>
+CommonComponent-><span class="fn">callMqtt</span>($params);</pre>
+      </div>
+    </div>
+    <div class="step">
+      <div class="snum">5</div>
+      <div class="sbody">
+        <strong>MQTT broker delivers to panel</strong>
+        <p>Broker publishes on the panel's MQTT topic. Panel receives the <code>remoteOpen</code> command, activates the selected relay, and the door/gate opens.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="snum">6</div>
+      <div class="sbody">
+        <strong>Response logged</strong>
+        <p>Panel publishes a response on its MQTT response topic. Cron <code>actionMqttrequest()</code> processes the response and stores it in <code>meet_fr_mqtt_call_response</code> table. <code>request_attempt</code> counter tracks retries.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="flow" style="margin-top:14px;flex-wrap:wrap">
+    <div class="box bx-and">Resident taps<br/>Unlock</div>
+    <div class="arrow">→ REST →</div>
+    <div class="box bx-api">actionPanelrelay<br/>(API)</div>
+    <div class="arrow">→ HTTP →</div>
+    <div class="box bx-mq">MQTT Broker<br/>3.0.204.184</div>
+    <div class="arrow">→ MQTT →</div>
+    <div class="box bx-pan">🚪 Panel<br/>relay opens</div>
+    <div class="arrow">← response ←</div>
+    <div class="box bx-db">meet_fr_mqtt_call<br/>response logged</div>
+  </div>
+
+  <h3>Relay Table Structure</h3>
+  <table>
+    <tr><th>Field</th><th>Meaning</th></tr>
+    <tr><td><code>relay_1…4</code></td><td>Relay names (e.g., "Main Gate", "Side Gate")</td></tr>
+    <tr><td><code>dtmf_tone_1…4</code></td><td>DTMF tones sent to trigger each relay</td></tr>
+    <tr><td><code>main_relay</code></td><td>Primary relay — default unlock</td></tr>
+    <tr><td><code>panel_mode</code></td><td>1 = 2-relay mode, 2 = 4-relay mode</td></tr>
+  </table>
+</section>
+
+<!-- 8. VIDEO STREAM -->
+<section id="video">
+  <h2>8. Video Stream – Setup &amp; Rendering</h2>
+  <p>Once the call reaches <code>State.StreamsRunning</code>, video is set up entirely on the Android side by Linphone SDK.</p>
+
+  <h3>Stream Setup Sequence</h3>
+  <div class="steps">
+    <div class="step">
+      <div class="snum">1</div>
+      <div class="sbody">
+        <strong>CallActivity detects video is enabled</strong>
+        <p>Checks <code>isVideoEnabled(call)</code> → inflates <code>CallVideoFragment</code>.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="snum">2</div>
+      <div class="sbody">
+        <strong>Renderer selected by GPU capability</strong>
+        <p>If <code>hasCrappyOpengl()</code> → <code>LinphoneTextureViewOverlay</code> (software). Otherwise → <code>LinphoneGL2JNIViewOverlay</code> with <code>AndroidVideoWindowImpl</code> (OpenGL ES 2.0 hardware).</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="snum">3</div>
+      <div class="sbody">
+        <strong>Surfaces bound to Linphone Core</strong>
+        <pre>LinphoneManager.getLc().setNativeVideoWindowId(mVideoView);    <span class="c">// panel video → screen</span>
+LinphoneManager.getLc().setNativePreviewWindowId(mCaptureView); <span class="c">// local camera preview</span></pre>
+      </div>
+    </div>
+    <div class="step">
+      <div class="snum">4</div>
+      <div class="sbody">
+        <strong>Video dimensions read from negotiated CallParams</strong>
+        <pre>callParams.getReceivedVideoDefinition().getWidth() / getHeight()
+callParams.getSentVideoDefinition().getWidth() / getHeight()</pre>
+      </div>
+    </div>
+    <div class="step">
+      <div class="snum">5</div>
+      <div class="sbody">
+        <strong>Audio routed to speaker + gesture support enabled</strong>
+        <p><code>enableSpeakerNew(true, call)</code> forces loudspeaker. Touch listeners on <code>mVideoView</code> enable pinch-to-zoom (<code>call.zoom(factor, x, y)</code>) and scroll-to-pan.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid2" style="margin-top:14px">
+    <div class="card">
+      <h4>Incoming (Panel → Phone)</h4>
+      <ul>
+        <li>Panel encodes → RTP packets over SIP proxy</li>
+        <li>Linphone C native layer decodes frames</li>
+        <li>Frames pushed to <code>TextureView</code> or <code>OpenGL surface</code></li>
+        <li>Pinch-to-zoom via <code>call.zoom()</code></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Outgoing (Phone Camera → Panel)</h4>
+      <ul>
+        <li>Camera selected: <code>setVideoDevice()</code></li>
+        <li>Linphone encodes → RTP to panel</li>
+        <li>Local preview via <code>setNativePreviewWindowId()</code></li>
+        <li>Camera switch mid-call: <code>CallManager.updateCall()</code></li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Video State Changes</h3>
+  <table>
+    <tr><th>State</th><th>Action</th></tr>
+    <tr><td><code>StreamsRunning</code></td><td>Video surfaces attached → RTP streams live</td></tr>
+    <tr><td><code>Paused / PausedByRemote</code></td><td>Video hidden, audio-only UI shown</td></tr>
+    <tr><td><code>Resuming</code></td><td>Video re-shown if <code>isVideoEnabled()</code></td></tr>
+    <tr><td><code>UpdatedByRemote</code></td><td>Panel requests video upgrade → user dialog shown</td></tr>
+    <tr><td><code>End / Released</code></td><td>Surfaces detached, audio focus released</td></tr>
+  </table>
+</section>
+
+<!-- 9. LICENCE -->
+<section id="licence">
+  <h2>9. MeetMe Licence Management</h2>
+  <p>Each unit requires an active MeetMe licence to make/receive intercom calls. Licences are managed via the web portal and Fermax CRM.</p>
+
+  <h3>Licence Types</h3>
+  <table>
+    <tr><th>Type</th><th>Meaning</th><th>Action</th></tr>
+    <tr><td>1</td><td>No licence (new)</td><td>Resident must subscribe and pay</td></tr>
+    <tr><td>2</td><td>Active (renewal eligible)</td><td>Resident can renew before expiry</td></tr>
+    <tr><td>3</td><td>Expired</td><td>Calls disabled until renewed</td></tr>
+  </table>
+
+  <h3>Licence Renewal Flow (Web Frontend)</h3>
+  <div class="steps">
+    <div class="step">
+      <div class="snum">1</div>
+      <div class="sbody">
+        <strong>Resident opens renewal page</strong>
+        <p><code>MeetmelicencerenewalController::actionMeetMeLicenecePayOrRenewal()</code> loads licence from <code>meet_me_licence_master</code> and fetches subscription details from Fermax CRM (<code>meet-me-licence-renewal/getsubscription</code>).</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="snum">2</div>
+      <div class="sbody">
+        <strong>Resident selects payment method and pays</strong>
+        <p>Supports: Stripe (card), PayNow via OCBC QR (<code>OCBCpayment::getQr()</code>), DBS rewards points (<code>iliving_admin_api/dbs/convertdbspoint</code>), DBS PayLah.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="snum">3</div>
+      <div class="sbody">
+        <strong>Payment submitted to Fermax CRM</strong>
+        <p><code>actionAddtransaction()</code> POSTs to CRM: <code>meet-me-licence-renewal/paymentofmeetlicencerenewal</code>. On success, sends push notification (activity_type=3, ref_table=104).</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="snum">4</div>
+      <div class="sbody">
+        <strong>CRM updates licence + syncs back</strong>
+        <p>Fermax CRM extends <code>expiry_date</code> in its system. API syncs via <code>actionMeetmecallrecieveaction()</code> → SP <code>meet_me_call_recieve_action</code> → calls CRM <code>externalsync/synclicencestatusfromiplus</code>.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="snum">5</div>
+      <div class="sbody">
+        <strong>Receipt generated and emailed</strong>
+        <p><code>actionPaymentdetail()</code> → <code>generateReceipt(TransactionID)</code> creates PDF via mPDF. Email sent to resident.</p>
+      </div>
+    </div>
+  </div>
+
+  <h3>Receive Calls Toggle</h3>
+  <p>Residents can disable incoming intercom calls via <code>actionMeetmecallrecieveaction(recieve_calls=0/1)</code>. Stored in <code>meet_me_licence.recieve_calls</code>. Synced to CRM immediately.</p>
+</section>
+
+<!-- 10. MQTT / HEARTBEAT -->
+<section id="mqtt">
+  <h2>10. MQTT Communication &amp; Panel Heartbeat</h2>
+
+  <h3>MQTT Actions</h3>
+  <table>
+    <tr><th>Action</th><th>Trigger</th><th>What Happens</th></tr>
+    <tr><td><code>remoteOpen</code></td><td>Resident taps unlock during call</td><td>Panel activates selected relay → door opens</td></tr>
+    <tr><td><code>syncFace</code></td><td>Cron / admin action</td><td>Panel syncs face recognition data for authorised residents</td></tr>
+    <tr><td><code>deleteFace</code></td><td>Admin removes resident access</td><td>Panel deletes resident's face from recognition DB</td></tr>
+    <tr><td><code>clearFace</code></td><td>Admin bulk action</td><td>Panel clears all face recognition data</td></tr>
+  </table>
+
+  <h3>MQTT Request Queue (<code>meet_fr_mqtt_call</code>)</h3>
+  <ul>
+    <li>Every MQTT command is queued in <code>meet_fr_mqtt_call</code> before sending</li>
+    <li><code>request_attempt</code> tracks retry count</li>
+    <li>Cron <code>actionMqttrequest()</code> processes 50 requests per run, 100ms sleep between each</li>
+    <li>Responses stored in <code>meet_fr_mqtt_call_response</code></li>
+  </ul>
+
+  <h3>Panel Heartbeat Monitoring</h3>
+  <p>Panels publish a heartbeat over MQTT periodically. The web backend monitors this:</p>
+  <ul>
+    <li><strong>Heartbeat stops:</strong> Cron <code>actionHeartbeat()</code> → SP <code>meet_heart_beat_stop_email</code> → sends admin email alert. <code>notified = 1</code> set in <code>meet_fr_mqtt_device_response</code>.</li>
+    <li><strong>Heartbeat resumes:</strong> Cron <code>actionHeartbeatrestart()</code> → SP <code>meet_heart_beat_start_email</code> → sends admin recovery email. <code>restart_notified = 1</code> set.</li>
+  </ul>
+
+  <h3>MQTT Broker Config (<code>meet_mqtt_setting</code>)</h3>
+  <table>
+    <tr><th>Field</th><th>Value</th></tr>
+    <tr><td>api_url</td><td>http://3.0.204.184/data/mqtt-app/mqtt</td></tr>
+    <tr><td>server</td><td>3.0.204.184</td></tr>
+    <tr><td>port</td><td>1883</td></tr>
+    <tr><td>client_id</td><td>PHP-MQTT</td></tr>
+    <tr><td>username</td><td>admin</td></tr>
+  </table>
+</section>
+
+<!-- 11. CRON JOBS -->
+<section id="cron">
+  <h2>11. Cron Jobs Related to MeetMe</h2>
+  <table>
+    <tr><th>Cron ID</th><th>URL</th><th>Frequency</th><th>What It Does</th></tr>
+    <tr>
+      <td>32</td>
+      <td><code>cron/meetvisitorarrive</code></td>
+      <td>On MQTT event</td>
+      <td>Handles visitor arrival notification when a visitor is detected by MQTT panel</td>
+    </tr>
+    <tr>
+      <td>33</td>
+      <td><code>cron/mqttrequest</code></td>
+      <td>Every minute</td>
+      <td>Processes pending MQTT requests from <code>meet_fr_mqtt_call</code> queue — sends unlock / face-sync commands to panels</td>
+    </tr>
+    <tr>
+      <td>34</td>
+      <td><code>cron/mqttsyncface</code></td>
+      <td>Every minute (async)</td>
+      <td>Daily face sync — pushes updated face recognition data to all panels</td>
+    </tr>
+    <tr>
+      <td>–</td>
+      <td><code>cron/meetmelicencenotification</code></td>
+      <td>Daily</td>
+      <td>Sends licence expiry reminders (30 days before, 7 days before, on expiry). Calls SP <code>meet_me_licence_renewal_notification</code> per condo.</td>
+    </tr>
+    <tr>
+      <td>–</td>
+      <td><code>cron/heartbeat</code></td>
+      <td>Periodic</td>
+      <td>Monitors panel heartbeat. Sends email alert when panel goes offline/comes back online.</td>
+    </tr>
+  </table>
+</section>
+
+<!-- 12. DB TABLES -->
+<section id="db">
+  <h2>12. Key Database Tables</h2>
+  <table>
+    <tr><th>Table</th><th>Purpose</th><th>Key Fields</th></tr>
+    <tr>
+      <td><code>meet_panel</code></td>
+      <td>Door panel master record</td>
+      <td>panel_id, panel_name, licence_number, panel_type (1/2), relay_1…4, dtmf_tone_1…4, main_relay, panel_mode, condo_id, status</td>
+    </tr>
+    <tr>
+      <td><code>meet_panel_unit</code></td>
+      <td>Maps panels to units</td>
+      <td>meet_panel_unit_id, panel_id, unit_id, condo_id, status</td>
+    </tr>
+    <tr>
+      <td><code>meet_server_setting</code></td>
+      <td>SIP server config per condo</td>
+      <td>domain, sip_url, is_check_sip_url, is_ts_server_enable, setup_instruction, instruction</td>
+    </tr>
+    <tr>
+      <td><code>meet_me_licence_master</code></td>
+      <td>MeetMe licence record</td>
+      <td>meet_me_licence_id, licence_number (AES encrypted), expiry_date, new_expiry_date, status, condo_id</td>
+    </tr>
+    <tr>
+      <td><code>meet_me_licence</code></td>
+      <td>Per-unit licence link</td>
+      <td>meet_me_licence_id_master, unit_id, user_id, recieve_calls (0/1), status</td>
+    </tr>
+    <tr>
+      <td><code>meet_me_secondary_licence_link</code></td>
+      <td>Secondary users on same licence</td>
+      <td>meet_me_licence_link_id, meet_me_licence_id_master, unit_user_id, user_id, status</td>
+    </tr>
+    <tr>
+      <td><code>meet_fr_mqtt_call</code></td>
+      <td>MQTT command queue</td>
+      <td>meet_fr_mqtt_id, topic, mqtt_action (remoteOpen/syncFace/deleteFace/clearFace), request, response, request_attempt, unit_id</td>
+    </tr>
+    <tr>
+      <td><code>meet_fr_mqtt_call_response</code></td>
+      <td>MQTT command responses</td>
+      <td>meet_fr_mqtt_response_id, meet_fr_mqtt_id, panel_id, response, created_at</td>
+    </tr>
+    <tr>
+      <td><code>meet_fr_mqtt_device_response</code></td>
+      <td>Panel heartbeat tracking</td>
+      <td>heart_beat_id, action, topic, face_id, response, notified, restart_notified, push_used, code_status</td>
+    </tr>
+    <tr>
+      <td><code>meet_mqtt_setting</code></td>
+      <td>MQTT broker config</td>
+      <td>api_url, topic, server, port, client_id, username, password</td>
+    </tr>
+  </table>
+
+  <h3>Key Stored Procedures</h3>
+  <table>
+    <tr><th>Stored Procedure</th><th>Called From</th><th>Purpose</th></tr>
+    <tr><td><code>meet_server_setting_get_ver3</code></td><td>actionIntercomconfiguration</td><td>Gets SIP server settings for a condo</td></tr>
+    <tr><td><code>meet_panel_get_list_ver3</code></td><td>actionIntercomconfiguration, actionPanellist</td><td>Gets panel/guard list by type for a unit</td></tr>
+    <tr><td><code>meet_me_get_licence_detail</code></td><td>actionMeetmelicencedetails</td><td>Gets licence details, SIP credentials, expiry info</td></tr>
+    <tr><td><code>meet_me_call_recieve_action</code></td><td>actionMeetmecallrecieveaction</td><td>Updates receive_calls flag for a unit's licence</td></tr>
+    <tr><td><code>intercom_panel_settings_import</code></td><td>actionPanelSettingsImport (backend)</td><td>Bulk imports panel config from CSV via XML</td></tr>
+    <tr><td><code>mqtt_get_request_list</code></td><td>actionMqttrequest (cron)</td><td>Gets pending MQTT commands to process</td></tr>
+    <tr><td><code>meet_me_licence_renewal_notification</code></td><td>actionMeetmelicencenotification (cron)</td><td>Sends push/email for upcoming licence expiry</td></tr>
+    <tr><td><code>meet_heart_beat_stop_email</code></td><td>actionHeartbeat (cron)</td><td>Sends email when panel heartbeat stops</td></tr>
+    <tr><td><code>meet_heart_beat_start_email</code></td><td>actionHeartbeatrestart (cron)</td><td>Sends email when panel heartbeat resumes</td></tr>
+    <tr><td><code>meet_me_licence_sync</code></td><td>ExternalsyncController</td><td>Syncs licence data from Fermax CRM to iPlus DB</td></tr>
+  </table>
+</section>
+
+<!-- 13. ALL CLASSES -->
+<section id="classes">
+  <h2>13. All Key Classes – Web &amp; Android</h2>
+
+  <h3>Web (iplus-living-web)</h3>
+  <table>
+    <tr><th>Class / File</th><th>Layer</th><th>Role</th></tr>
+    <tr><td><code>apiver6/controllers/IntercomController.php</code></td><td><span class="tag tag-w">API</span></td><td>Main API: panel list, SIP config, relay data, licence details, receive-calls toggle</td></tr>
+    <tr><td><code>backend/controllers/IntercomController.php</code></td><td><span class="tag tag-w">Admin</span></td><td>Admin CRUD for panels, guard units, server settings, CSV import</td></tr>
+    <tr><td><code>frontend/controllers/MeetmelicencerenewalController.php</code></td><td><span class="tag tag-w">Web</span></td><td>Licence renewal UI, payment processing (Stripe, PayNow, DBS), receipt generation</td></tr>
+    <tr><td><code>backend/models/MeetPanel.php</code></td><td><span class="tag tag-d">DB</span></td><td>Model for <code>meet_panel</code> table — panel config, relay settings</td></tr>
+    <tr><td><code>backend/models/MeetPanelUnit.php</code></td><td><span class="tag tag-d">DB</span></td><td>Model for <code>meet_panel_unit</code> — panel-to-unit mapping</td></tr>
+    <tr><td><code>backend/models/MeetServerSetting.php</code></td><td><span class="tag tag-d">DB</span></td><td>Model for <code>meet_server_setting</code> — SIP domain, URL, flags</td></tr>
+    <tr><td><code>backend/models/MeetFrMqttCallResponse.php</code></td><td><span class="tag tag-d">DB</span></td><td>Stores MQTT command responses from panels</td></tr>
+    <tr><td><code>backend/models/MeetFrMqttDeviceResponse.php</code></td><td><span class="tag tag-d">DB</span></td><td>Panel heartbeat tracking with code_status and alert flags</td></tr>
+    <tr><td><code>common/components/CommonComponent.php → callMqtt()</code></td><td><span class="tag tag-b">Core</span></td><td>HTTP client that POSTs MQTT commands to the broker</td></tr>
+    <tr><td><code>apiver6/controllers/CronController.php</code></td><td><span class="tag tag-b">Cron</span></td><td>MQTT request queue processor, heartbeat monitor, licence notification sender</td></tr>
+    <tr><td><code>apiver6/controllers/ExternalsyncController.php</code></td><td><span class="tag tag-b">Sync</span></td><td>Syncs licence data from Fermax CRM to iPlus DB via SP <code>meet_me_licence_sync</code></td></tr>
+  </table>
+
+  <h3>Android (iplus-living-android)</h3>
+  <table>
+    <tr><th>Class / File</th><th>Package</th><th>Role</th></tr>
+    <tr><td><code>LinphoneService.java</code></td><td><span class="tag tag-a">meetme</span></td><td>Foreground service — hosts Linphone Core lifecycle, processes incoming SIP</td></tr>
+    <tr><td><code>LinphoneManager.java</code></td><td><span class="tag tag-a">meetme</span></td><td>Singleton wrapping <code>Core</code> — SIP registration, camera, audio routing, proximity sensor</td></tr>
+    <tr><td><code>CallManager.java</code></td><td><span class="tag tag-a">meetme/call</span></td><td>inviteAddress(), reinviteWithVideo(), updateCall() — manages SIP call params</td></tr>
+    <tr><td><code>CallIncomingActivity.java</code></td><td><span class="tag tag-a">meetme/call</span></td><td>Incoming call UI — accept (<code>call.accept()</code>) / decline (<code>call.terminate()</code>)</td></tr>
+    <tr><td><code>CallActivity.java</code></td><td><span class="tag tag-a">meetme/call</span></td><td>Live call screen — manages video/audio fragments, state machine, recording toggle</td></tr>
+    <tr><td><code>CallOutgoingActivity.java</code></td><td><span class="tag tag-a">meetme/call</span></td><td>Ringing screen while SIP INVITE is pending</td></tr>
+    <tr><td><code>CallVideoFragment.java</code></td><td><span class="tag tag-a">meetme/call</span></td><td>Creates video surfaces, pinch-to-zoom, scroll-pan via <code>call.zoom()</code></td></tr>
+    <tr><td><code>CallAudioFragment.java</code></td><td><span class="tag tag-a">meetme/call</span></td><td>Audio-only call UI (when video is disabled or paused)</td></tr>
+    <tr><td><code>LinphoneTextureViewOverlay.java</code></td><td><span class="tag tag-a">meetme/views</span></td><td>Software TextureView renderer — <code>setNativeVideoWindowId()</code> + <code>setNativePreviewWindowId()</code></td></tr>
+    <tr><td><code>LinphoneGL2JNIViewOverlay.java</code></td><td><span class="tag tag-a">meetme/views</span></td><td>OpenGL ES 2.0 renderer via <code>AndroidVideoWindowImpl</code> — hardware accelerated</td></tr>
+    <tr><td><code>BandwidthManager.java</code></td><td><span class="tag tag-a">meetme/call</span></td><td>Decides video on/off, audio bitrate limit based on network conditions</td></tr>
+    <tr><td><code>FirebaseMessagingService.java</code> (MeetMe)</td><td><span class="tag tag-a">meetme/firebase</span></td><td>Linphone-specific FCM handler — starts LinphoneService on incoming call push</td></tr>
+    <tr><td><code>MyFirebaseMessagingService.java</code></td><td><span class="tag tag-a">services</span></td><td>General FCM handler — routes MeetMe push (isfromfermax flag) to Linphone handler</td></tr>
+    <tr><td><code>FirebasePushHelper.java</code></td><td><span class="tag tag-a">meetme/firebase</span></td><td>Gets FCM token, stores in LinphonePreferences, registers with SIP server</td></tr>
+    <tr><td><code>NotificationsManager.java</code></td><td><span class="tag tag-a">meetme</span></td><td>Manages call notifications and notification action buttons (Answer/Decline)</td></tr>
+    <tr><td><code>NotificationBroadcastReceiver.java</code></td><td><span class="tag tag-a">meetme</span></td><td>Handles notification action buttons: INTENT_ANSWER_CALL / INTENT_HANGUP_CALL</td></tr>
+    <tr><td><code>HomeFragment.java</code></td><td><span class="tag tag-a">meetme/fragments</span></td><td>Displays panel/guard tabs, fetches intercom config, triggers outgoing call</td></tr>
+    <tr><td><code>PanelGuardListAdapter.java</code></td><td><span class="tag tag-a">meetme/adapter</span></td><td>Renders panel/guard list; on tap → calls <code>setAddresGoToDialerAndCall()</code></td></tr>
+    <tr><td><code>XmlRpcHelper.java</code></td><td><span class="tag tag-a">meetme/xmlrpc</span></td><td>SIP account provisioning/expiry renewal via Linphone's <code>XmlRpcSession</code></td></tr>
+    <tr><td><code>LinphonePreferences.java</code></td><td><span class="tag tag-a">meetme/settings</span></td><td>Stores SIP credentials, FCM token, media settings, encryption config</td></tr>
+    <tr><td><code>StatusFragment.java</code></td><td><span class="tag tag-a">meetme/fragments</span></td><td>Polls <code>call.getCurrentQuality()</code> every 1 second, shows signal icon</td></tr>
+  </table>
+
+  <div class="note" style="margin-top:20px">
+    <strong>Key integration point:</strong> The Android app's <code>MyFirebaseMessagingService</code> is the bridge between the general iPlus notification system and the MeetMe SIP system. It checks for the <code>isfromfermax</code> flag in every FCM push — if present, it routes to Linphone's handler to wake up the SIP stack; otherwise it handles it as a regular app notification.
+  </div>
+</section>
+
+</div>
+</body>
+</html>
