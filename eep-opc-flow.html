@@ -1,0 +1,2314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>EEP OPC — Barrier Control Architecture</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue:     #1B4FD8;
+      --blue-lt:  #EEF2FF;
+      --green:    #0F9C60;
+      --green-lt: #ECFDF5;
+      --red:      #DC2626;
+      --red-lt:   #FEF2F2;
+      --amber:    #D97706;
+      --amber-lt: #FFFBEB;
+      --purple:   #7C3AED;
+      --purple-lt:#F5F3FF;
+      --gray:     #64748B;
+      --gray-lt:  #F8FAFC;
+      --border:   #E2E8F0;
+      --text:     #1E293B;
+      --heading:  #0F172A;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: var(--text);
+      background: #F1F5F9;
+      line-height: 1.6;
+    }
+
+    /* HEADER */
+    .page-header {
+      background: linear-gradient(135deg, #0F172A 0%, #1B4FD8 60%, #0F9C60 130%);
+      color: #fff;
+      padding: 48px 60px 40px;
+    }
+    .page-header .badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1.2px;
+      padding: 4px 14px;
+      margin-bottom: 18px;
+      text-transform: uppercase;
+    }
+    .page-header h1 { font-size: 36px; font-weight: 800; line-height: 1.15; margin-bottom: 12px; }
+    .page-header p  { font-size: 16px; opacity: 0.82; max-width: 680px; }
+
+    /* LAYOUT */
+    .container { max-width: 1100px; margin: 0 auto; padding: 48px 24px; }
+
+    /* SECTION LABELS */
+    .section-label {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 11px; font-weight: 700; letter-spacing: 1.4px;
+      text-transform: uppercase; color: var(--blue);
+      margin-bottom: 8px;
+    }
+    .section-label::before {
+      content: ''; display: block; width: 28px; height: 2px; background: var(--blue);
+    }
+    h2 { font-size: 22px; font-weight: 700; color: var(--heading); margin-bottom: 22px; }
+    h3 { font-size: 15px; font-weight: 700; color: var(--heading); margin-bottom: 10px; }
+
+    /* CARDS */
+    .card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 28px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.04);
+    }
+
+    /* COMPONENT GRID */
+    .comp-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 8px;
+    }
+    @media(max-width:780px){ .comp-grid { grid-template-columns: 1fr 1fr; } }
+    @media(max-width:480px){ .comp-grid { grid-template-columns: 1fr; } }
+
+    .comp-item {
+      background: var(--gray-lt);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px 20px;
+    }
+    .comp-item .chip {
+      display: inline-block;
+      font-size: 10px; font-weight: 700; letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 20px;
+      margin-bottom: 10px;
+    }
+    .chip-blue   { background: var(--blue-lt);   color: var(--blue); }
+    .chip-green  { background: var(--green-lt);  color: var(--green); }
+    .chip-amber  { background: var(--amber-lt);  color: var(--amber); }
+    .chip-purple { background: var(--purple-lt); color: var(--purple); }
+    .chip-red    { background: var(--red-lt);    color: var(--red); }
+    .chip-gray   { background: #E2E8F0;          color: #475569; }
+
+    .comp-item h3 { margin-bottom: 6px; font-size: 14px; }
+    .comp-item p  { font-size: 13px; color: var(--gray); line-height: 1.5; }
+
+    /* FLOW DIAGRAM */
+    .flow {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      margin-top: 8px;
+    }
+    .flow-row {
+      display: grid;
+      grid-template-columns: 160px 1fr;
+      gap: 0;
+      align-items: stretch;
+      min-height: 60px;
+    }
+    .flow-actor {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 16px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--gray);
+      text-align: right;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      border-right: 2px solid var(--border);
+    }
+    .flow-content {
+      display: flex;
+      align-items: center;
+      padding: 10px 16px;
+      gap: 12px;
+      border-bottom: 1px dashed var(--border);
+      font-size: 13.5px;
+    }
+    .flow-row:last-child .flow-content { border-bottom: none; }
+
+    .step-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      font-size: 12px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .step-blue   { background: var(--blue-lt);   color: var(--blue); }
+    .step-green  { background: var(--green-lt);  color: var(--green); }
+    .step-amber  { background: var(--amber-lt);  color: var(--amber); }
+    .step-purple { background: var(--purple-lt); color: var(--purple); }
+    .step-red    { background: var(--red-lt);    color: var(--red); }
+
+    .flow-arrow {
+      font-size: 11px;
+      font-weight: 700;
+      color: #94A3B8;
+      padding: 2px 8px;
+      background: var(--gray-lt);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+    .flow-label { color: var(--heading); font-size: 13.5px; }
+    .flow-note  { font-size: 12px; color: var(--gray); margin-top: 3px; }
+    .flow-block { display: flex; flex-direction: column; }
+
+    /* VALIDATION TABLE */
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    th {
+      background: var(--gray-lt);
+      font-size: 11px; font-weight: 700;
+      letter-spacing: 0.8px; text-transform: uppercase;
+      color: var(--gray);
+      padding: 10px 14px;
+      text-align: left;
+      border-bottom: 2px solid var(--border);
+    }
+    td {
+      padding: 12px 14px;
+      font-size: 13.5px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    .tag {
+      display: inline-block;
+      font-size: 11px; font-weight: 700;
+      padding: 2px 10px;
+      border-radius: 20px;
+    }
+    .tag-pass  { background: var(--green-lt);  color: var(--green); }
+    .tag-fail  { background: var(--red-lt);    color: var(--red); }
+    .tag-warn  { background: var(--amber-lt);  color: var(--amber); }
+    .tag-info  { background: var(--blue-lt);   color: var(--blue); }
+
+    /* RESULT CODE TABLE */
+    .rc-grid {
+      display: grid;
+      grid-template-columns: 80px 1fr;
+      gap: 0;
+      margin-top: 8px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .rc-code {
+      font-family: monospace;
+      font-size: 14px;
+      font-weight: 700;
+      padding: 12px 16px;
+      background: var(--gray-lt);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+    }
+    .rc-body {
+      padding: 12px 16px;
+      font-size: 13px;
+      border-bottom: 1px solid var(--border);
+    }
+    .rc-body strong { font-size: 13.5px; display: block; margin-bottom: 2px; }
+    .rc-body span   { color: var(--gray); font-size: 12.5px; }
+    .rc-grid .rc-code:last-child,
+    .rc-grid .rc-body:last-child { border-bottom: none; }
+
+    /* HIGHLIGHT BOXES */
+    .note {
+      display: flex; gap: 14px;
+      background: var(--amber-lt);
+      border: 1px solid #FCD34D;
+      border-left: 4px solid var(--amber);
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin-top: 16px;
+      font-size: 13.5px;
+    }
+    .note-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+    .note p { color: #92400E; line-height: 1.6; }
+    .note strong { color: #78350F; }
+
+    .info-box {
+      display: flex; gap: 14px;
+      background: var(--blue-lt);
+      border: 1px solid #BFDBFE;
+      border-left: 4px solid var(--blue);
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin-top: 16px;
+      font-size: 13.5px;
+    }
+    .info-box-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+    .info-box p { color: #1E3A8A; line-height: 1.6; }
+    .info-box strong { color: #1E40AF; }
+
+    /* ARCH DIAGRAM */
+    .arch {
+      display: grid;
+      grid-template-columns: 1fr 48px 1fr 48px 1fr;
+      gap: 0;
+      align-items: center;
+      margin-top: 16px;
+    }
+    .arch-box {
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 16px;
+      text-align: center;
+      background: #fff;
+    }
+    .arch-box.highlight { border-color: var(--blue); background: var(--blue-lt); }
+    .arch-box .arch-icon { font-size: 32px; margin-bottom: 8px; }
+    .arch-box .arch-title { font-size: 13px; font-weight: 700; color: var(--heading); }
+    .arch-box .arch-sub   { font-size: 11px; color: var(--gray); margin-top: 4px; }
+    .arch-arrow {
+      text-align: center;
+      color: var(--gray);
+      font-size: 22px;
+    }
+
+    /* CODE BLOCK */
+    .code-block {
+      background: #0F172A;
+      border-radius: 10px;
+      padding: 20px 24px;
+      margin-top: 12px;
+      overflow-x: auto;
+    }
+    .code-block pre {
+      color: #E2E8F0;
+      font-family: "Cascadia Code", "Fira Code", "Consolas", monospace;
+      font-size: 13px;
+      line-height: 1.7;
+      white-space: pre;
+    }
+    .code-block .kw  { color: #93C5FD; }
+    .code-block .str { color: #86EFAC; }
+    .code-block .cmt { color: #64748B; }
+    .code-block .num { color: #FCA5A5; }
+    .code-block .fn  { color: #FDE68A; }
+
+    /* TWO COL */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-top: 8px;
+    }
+    @media(max-width:680px){ .two-col { grid-template-columns: 1fr; } }
+
+    .col-box {
+      background: var(--gray-lt);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+    }
+    .col-box h3 { margin-bottom: 12px; }
+
+    ul.clean { list-style: none; padding: 0; }
+    ul.clean li {
+      display: flex; gap: 10px; align-items: flex-start;
+      font-size: 13.5px;
+      padding: 6px 0;
+      border-bottom: 1px dashed var(--border);
+    }
+    ul.clean li:last-child { border-bottom: none; }
+    ul.clean li::before {
+      content: '›';
+      color: var(--blue);
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .section-gap { margin-bottom: 48px; }
+
+    /* APPENDIX */
+    .appendix-header {
+      background: linear-gradient(135deg, #1E1B4B 0%, #4C1D95 100%);
+      color: #fff;
+      padding: 40px 60px 32px;
+      margin-top: 48px;
+    }
+    .appendix-header .badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 20px;
+      font-size: 11px; font-weight: 600; letter-spacing: 1.2px;
+      padding: 4px 14px; margin-bottom: 16px; text-transform: uppercase;
+    }
+    .appendix-header h2 { font-size: 28px; font-weight: 800; color: #fff; margin-bottom: 8px; }
+    .appendix-header p  { font-size: 14px; opacity: 0.8; }
+
+    .section-label-purple {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 11px; font-weight: 700; letter-spacing: 1.4px;
+      text-transform: uppercase; color: var(--purple);
+      margin-bottom: 8px;
+    }
+    .section-label-purple::before {
+      content: ''; display: block; width: 28px; height: 2px; background: var(--purple);
+    }
+
+    .sync-diagram {
+      display: grid;
+      grid-template-columns: 1fr 60px 1fr;
+      gap: 0;
+      align-items: center;
+      margin: 16px 0;
+    }
+    .sync-box {
+      background: var(--gray-lt);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .sync-box.master { border-color: var(--blue); background: var(--blue-lt); }
+    .sync-box.local  { border-color: var(--green); background: var(--green-lt); }
+    .sync-box h4 { font-size: 14px; font-weight: 700; margin-bottom: 8px; }
+    .sync-box ul { list-style: none; padding: 0; }
+    .sync-box ul li { font-size: 12.5px; color: var(--gray); padding: 2px 0; }
+    .sync-box ul li::before { content: '• '; color: var(--blue); }
+    .sync-box.local ul li::before { color: var(--green); }
+    .sync-arrow-col {
+      display: flex; flex-direction: column;
+      align-items: center; gap: 8px;
+      font-size: 11px; font-weight: 700;
+      color: var(--purple);
+      text-align: center;
+    }
+    .sync-arrow-col .arr { font-size: 20px; }
+
+    .steps-list { list-style: none; padding: 0; margin-top: 8px; }
+    .steps-list li {
+      display: flex; gap: 14px; align-items: flex-start;
+      padding: 12px 0;
+      border-bottom: 1px dashed var(--border);
+      font-size: 13.5px;
+    }
+    .steps-list li:last-child { border-bottom: none; }
+    .steps-list .sn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--purple-lt); color: var(--purple);
+      font-size: 12px; font-weight: 700; flex-shrink: 0;
+    }
+    .steps-list .st { display: flex; flex-direction: column; }
+    .steps-list .st strong { font-size: 13.5px; color: var(--heading); }
+    .steps-list .st span   { font-size: 12px; color: var(--gray); margin-top: 2px; }
+
+    .pkg-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 12px;
+    }
+    @media(max-width:780px){ .pkg-grid { grid-template-columns: 1fr; } }
+    .pkg-box {
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      background: #fff;
+    }
+    .pkg-box.recommended { border-color: var(--green); }
+    .pkg-box .pkg-title { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+    .pkg-box .pkg-sub   { font-size: 12px; color: var(--gray); margin-bottom: 12px; }
+    .pkg-box ul { list-style: none; padding: 0; }
+    .pkg-box ul li { font-size: 12.5px; padding: 3px 0; color: var(--text); }
+    .pkg-box ul li::before { content: '✓ '; color: var(--green); font-weight: 700; }
+    .pkg-box ul li.con::before { content: '✗ '; color: var(--red); }
+
+    .stack-row {
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: 0;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-top: 12px;
+    }
+    .stack-label {
+      background: var(--gray-lt);
+      font-size: 13px; font-weight: 700;
+      padding: 14px 16px;
+      border-right: 1px solid var(--border);
+      display: flex; align-items: center;
+      border-bottom: 1px solid var(--border);
+      color: var(--heading);
+    }
+    .stack-label:last-of-type { border-bottom: none; }
+    .stack-value {
+      padding: 14px 16px;
+      font-size: 13px;
+      border-bottom: 1px solid var(--border);
+    }
+    .stack-value:last-child { border-bottom: none; }
+
+    .os-compare {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-top: 12px;
+    }
+    @media(max-width:680px){ .os-compare { grid-template-columns: 1fr; } }
+    .os-box {
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      background: #fff;
+    }
+    .os-box h4 { font-size: 15px; font-weight: 700; margin-bottom: 12px; }
+    .os-box table { margin-top: 0; }
+  </style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="badge">EEP · OPC Architecture</div>
+  <h1>OPC Barrier Control<br/>Architecture Document</h1>
+  <p>How the Operation PC (OPC) service collects OBU data from the EEP DSRC Device, validates it, and opens the barrier — without payment processing.</p>
+</div>
+
+<div class="container">
+
+  <!-- ── 1. SYSTEM OVERVIEW ── -->
+  <div class="section-gap">
+    <div class="section-label">Section 1</div>
+    <h2>System Overview</h2>
+
+    <div class="arch">
+      <div class="arch-box">
+        <div class="arch-icon">🚗</div>
+        <div class="arch-title">Vehicle OBU</div>
+        <div class="arch-sub">On-Board Unit<br/>communicates via DSRC</div>
+      </div>
+      <div class="arch-arrow">⟷</div>
+      <div class="arch-box">
+        <div class="arch-icon">📡</div>
+        <div class="arch-title">EEP DSRC Device</div>
+        <div class="arch-sub">Installed at car park<br/>entry / exit lane</div>
+      </div>
+      <div class="arch-arrow">⟷</div>
+      <div class="arch-box highlight">
+        <div class="arch-icon">💻</div>
+        <div class="arch-title">OPC Service</div>
+        <div class="arch-sub">Node.js / TypeScript<br/>on-site embedded PC</div>
+      </div>
+    </div>
+
+    <div class="info-box" style="margin-top:20px;">
+      <div class="info-box-icon">ℹ️</div>
+      <p>
+        <strong>Scope of this document:</strong> The OPC service connects to the EEP DSRC Device over Ethernet (TCP/IP), receives OBU data when a vehicle arrives, validates it, and sends a command to open the barrier. Payment processing (NETS Cashcard, CEPAS, BE-Pay) is out of scope.
+      </p>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+      <h3>System Components</h3>
+      <div class="comp-grid">
+        <div class="comp-item">
+          <div class="chip chip-blue">External</div>
+          <h3>EEP DSRC Device</h3>
+          <p>Communicates with OBU via DSRC. Sends OBU data to OPC over Ethernet. Controls barrier via DIO port.</p>
+        </div>
+        <div class="comp-item">
+          <div class="chip chip-green">On-Site PC</div>
+          <h3>OPC Service (this)</h3>
+          <p>TCP client that receives EEP messages, validates OBU info, and sends barrier open command back to EEP device.</p>
+        </div>
+        <div class="comp-item">
+          <div class="chip chip-amber">Hardware</div>
+          <h3>Barrier Gate</h3>
+          <p>Connected to EEP DSRC Device via Digital Output (DO) port. OPC triggers it indirectly via <code>Set DO Request</code>.</p>
+        </div>
+        <div class="comp-item">
+          <div class="chip chip-purple">Hardware</div>
+          <h3>Loop Coil</h3>
+          <p>Detects vehicle presence. Connected to EEP DSRC Device's DI port. Triggers DSRC communication sequence.</p>
+        </div>
+        <div class="comp-item">
+          <div class="chip chip-gray">Optional</div>
+          <h3>Terminal Station (TS)</h3>
+          <p>Per-lane device for LED display, receipt printing, and handling vehicles without OBU. Not in scope for this flow.</p>
+        </div>
+        <div class="comp-item">
+          <div class="chip chip-green">Optional</div>
+          <h3>iplus Backend API</h3>
+          <p>OPC can call the iplus-living backend to validate whether a vehicle's OBU is registered/authorized.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 2. SEQUENCE FLOW ── -->
+  <div class="section-gap">
+    <div class="section-label">Section 2</div>
+    <h2>Message Sequence — Entry &amp; Exit Flow</h2>
+
+    <div class="two-col">
+      <!-- ENTRY -->
+      <div class="col-box">
+        <h3>🟢 Entry Sequence</h3>
+        <div class="flow">
+          <div class="flow-row">
+            <div class="flow-actor">EEP Device</div>
+            <div class="flow-content">
+              <span class="step-num step-blue">1</span>
+              <div class="flow-block">
+                <span class="flow-label"><span class="flow-arrow">→ OPC</span> <strong>DI Status Notification</strong></span>
+                <span class="flow-note">Loop coil ON — vehicle detected in lane</span>
+              </div>
+            </div>
+          </div>
+          <div class="flow-row">
+            <div class="flow-actor">EEP Device</div>
+            <div class="flow-content">
+              <span class="step-num step-blue">2</span>
+              <div class="flow-block">
+                <span class="flow-label">Sends <strong>Get OBU Information Request</strong> to OBU</span>
+                <span class="flow-note">Handled internally by EEP device — OPC just waits</span>
+              </div>
+            </div>
+          </div>
+          <div class="flow-row">
+            <div class="flow-actor">EEP Device</div>
+            <div class="flow-content">
+              <span class="step-num step-blue">3</span>
+              <div class="flow-block">
+                <span class="flow-label"><span class="flow-arrow">→ OPC</span> <strong>OBU Information Notification</strong></span>
+                <span class="flow-note">Contains: IU Label, Vehicle Number, VCC, entry/exit flag</span>
+              </div>
+            </div>
+          </div>
+          <div class="flow-row">
+            <div class="flow-actor">OPC</div>
+            <div class="flow-content">
+              <span class="step-num step-green">4</span>
+              <div class="flow-block">
+                <span class="flow-label"><strong>Validate OBU data</strong></span>
+                <span class="flow-note">Check IU Label / Vehicle Number against registered list</span>
+              </div>
+            </div>
+          </div>
+          <div class="flow-row">
+            <div class="flow-actor">OPC</div>
+            <div class="flow-content">
+              <span class="step-num step-green">5</span>
+              <div class="flow-block">
+                <span class="flow-label"><span class="flow-arrow">→ EEP</span> <strong>Set DO Request</strong> (barrier OPEN)</span>
+                <span class="flow-note">Sent only if validation passes</span>
+              </div>
+            </div>
+          </div>
+          <div class="flow-row">
+            <div class="flow-actor">OPC</div>
+            <div class="flow-content">
+              <span class="step-num step-green">6</span>
+              <div class="flow-block">
+                <span class="flow-label"><span class="flow-arrow">→ EEP</span> <strong>Carpark Process Complete Notification</strong></span>
+                <span class="flow-note">Tells EEP device OPC-side processing is finished</span>
+              </div>
+            </div>
+          </div>
+          <div class="flow-row">
+            <div class="flow-actor">EEP Device</div>
+            <div class="flow-content">
+              <span class="step-num step-blue">7</span>
+              <div class="flow-block">
+                <span class="flow-label"><span class="flow-arrow">→ OPC</span> <strong>DSRC Process Complete Notification</strong></span>
+                <span class="flow-note">DSRC session with OBU is done; vehicle can proceed</span>
+              </div>
+            </div>
+          </div>
+          <div class="flow-row">
+            <div class="flow-actor">EEP Device</div>
+            <div class="flow-content">
+              <span class="step-num step-blue">8</span>
+              <div class="flow-block">
+                <span class="flow-label"><span class="flow-arrow">→ OPC</span> <strong>DI Status Notification</strong></span>
+                <span class="flow-note">Loop coil OFF — vehicle has passed through</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- EXIT -->
+      <div class="col-box">
+        <h3>🔵 Exit Sequence</h3>
+        <div class="flow">
+          <div class="flow-row">
+            <div class="flow-actor">EEP Device</div>
+            <div class="flow-content">
+              <span class="step-num step-blue">1</span>
+              <div class="flow-block">
+                <span class="flow-label"><span class="flow-arrow">→ OPC</span> <strong>DI Status Notification</strong></span>
+                <span class="flow-note">Loop coil ON — vehicle at exit lane</span>
+              </div>
+            </div>
+          </div>
+          <div class="flow-row">
+            <div class="flow-actor">EEP Device</div>
+            <div class="flow-content">
+              <span class="step-num step-blue">2</span>
+              <div class="flow-block">
+                <span class="flow-label">Sends <strong>Get OBU Information Request</strong> to OBU</span>
+                <span class="flow-note">Handled internally by EEP device</span>
+              </div>
+            </div>
+          </div>
+          <div class="flow-row">
+            <div class="flow-actor">EEP Device</div>
+            <div class="flow-content">
+              <span class="step-num step-blue">3</span>
+              <div class="flow-block">
+                <span class="flow-label"><span class="flow-arrow">→ OPC</span> <strong>OBU Information Notification</strong></span>
+                <span class="flow-note">Same OBU fields; entry/exit flag = EXIT</span>
+              </div>
+            </div>
+          </div>
+          <div class="flow-row">
+            <div class="flow-actor">OPC</div>
+            <div class="flow-content">
+              <span class="step-num step-green">4</span>
+              <div class="flow-block">
+                <span class="flow-label"><strong>Validate OBU &amp; check entry record</strong></span>
+                <span class="flow-note">Confirm vehicle has a valid entry record (was logged in)</span>
+              </div>
+            </div>
+          </div>
+          <div class="flow-row">
+            <div class="flow-actor">OPC</div>
+            <div class="flow-content">
+              <span class="step-num step-green">5</span>
+              <div class="flow-block">
+                <span class="flow-label"><strong>Record exit time</strong> in DB / backend</span>
+                <span class="flow-note">Log session end even if no fee charged</span>
+              </div>
+            </div>
+          </div>
+          <div class="flow-row">
+            <div class="flow-actor">OPC</div>
+            <div class="flow-content">
+              <span class="step-num step-green">6</span>
+              <div class="flow-block">
+                <span class="flow-label"><span class="flow-arrow">→ EEP</span> <strong>Set DO Request</strong> (barrier OPEN)</span>
+                <span class="flow-note">No deduction needed — direct barrier open</span>
+              </div>
+            </div>
+          </div>
+          <div class="flow-row">
+            <div class="flow-actor">OPC</div>
+            <div class="flow-content">
+              <span class="step-num step-green">7</span>
+              <div class="flow-block">
+                <span class="flow-label"><span class="flow-arrow">→ EEP</span> <strong>Carpark Process Complete Notification</strong></span>
+                <span class="flow-note">OPC-side done; EEP will handle DSRC wrap-up</span>
+              </div>
+            </div>
+          </div>
+          <div class="flow-row">
+            <div class="flow-actor">EEP Device</div>
+            <div class="flow-content">
+              <span class="step-num step-blue">8</span>
+              <div class="flow-block">
+                <span class="flow-label"><span class="flow-arrow">→ OPC</span> <strong>DSRC Process Complete Notification</strong></span>
+                <span class="flow-note">Vehicle exits; DSRC session closed</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="note" style="margin-top:20px;">
+      <div class="note-icon">⚠️</div>
+      <p>
+        <strong>Timing constraint:</strong> OPC must send <code>Carpark Process Complete Notification</code> to the EEP device <em>after</em> the barrier open command (<code>Set DO Request</code>), and only after completing its own processing. If OPC delays, the EEP device will time out the DSRC session.
+      </p>
+    </div>
+  </div>
+
+  <!-- ── 3. OBU DATA COLLECTED ── -->
+  <div class="section-gap">
+    <div class="section-label">Section 3</div>
+    <h2>OBU Data Collected from EEP DSRC Device</h2>
+
+    <div class="card">
+      <table>
+        <thead>
+          <tr>
+            <th>Field</th>
+            <th>Source</th>
+            <th>Used For</th>
+            <th>Validation?</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>IU Label</strong></td>
+            <td>OBU Information Notification</td>
+            <td>Primary unique identifier of the OBU/vehicle</td>
+            <td><span class="tag tag-pass">Yes — Primary Key</span></td>
+          </tr>
+          <tr>
+            <td><strong>Vehicle Number</strong></td>
+            <td>OBU Information Notification</td>
+            <td>License plate number for complimentary / whitelist lookup</td>
+            <td><span class="tag tag-pass">Yes — Secondary Check</span></td>
+          </tr>
+          <tr>
+            <td><strong>VCC</strong><br/><small>Vehicle Charge Class</small></td>
+            <td>OBU Information Notification</td>
+            <td>Vehicle type (motorcycle, car, heavy vehicle)</td>
+            <td><span class="tag tag-info">Informational</span></td>
+          </tr>
+          <tr>
+            <td><strong>Entry/Exit Flag</strong></td>
+            <td>OBU Information Notification</td>
+            <td>Determines if this is an entry or exit event</td>
+            <td><span class="tag tag-pass">Yes — Drives Flow</span></td>
+          </tr>
+          <tr>
+            <td><strong>Deduction History</strong></td>
+            <td>OBU (via EEP device internal)</td>
+            <td>Anti-double deduction check (handled by EEP device, not OPC)</td>
+            <td><span class="tag tag-warn">EEP handles — not OPC</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── 4. VALIDATION LOGIC ── -->
+  <div class="section-gap">
+    <div class="section-label">Section 4</div>
+    <h2>OBU Validation Logic</h2>
+
+    <div class="card">
+      <h3>Validation Steps (in order)</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Check</th>
+            <th>Pass</th>
+            <th>Fail Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td><strong>OBU data present</strong><br/>IU Label is non-null and non-empty</td>
+            <td><span class="tag tag-pass">Continue</span></td>
+            <td>Log error, keep barrier closed, send error display to OBU</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td><strong>IU Label format valid</strong><br/>Matches expected format from interface spec</td>
+            <td><span class="tag tag-pass">Continue</span></td>
+            <td>Log error, keep barrier closed</td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td><strong>Vehicle registered / authorized</strong><br/>Look up IU Label or Vehicle Number in DB / iplus-living API</td>
+            <td><span class="tag tag-pass">Open Barrier</span></td>
+            <td>Keep barrier closed; optionally display "Not Authorized" message on OBU</td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td><strong>Entry record exists</strong> (exit flow only)<br/>Vehicle was logged in — has a valid open entry session</td>
+            <td><span class="tag tag-pass">Open Barrier</span></td>
+            <td>Flag as anomaly; decide policy (open or deny)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="info-box">
+        <div class="info-box-icon">💡</div>
+        <p>
+          <strong>Validation source options:</strong> (1) <em>Local DB on OPC machine</em> — fastest, works offline; (2) <em>iplus-living backend API</em> — always up to date, requires LAN/internet connectivity. Recommended approach: primary check against local DB synced from iplus backend, with fallback to API for real-time lookups.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 5. OPC SERVICE ARCHITECTURE ── -->
+  <div class="section-gap">
+    <div class="section-label">Section 5</div>
+    <h2>OPC Service — Internal Architecture</h2>
+
+    <div class="card">
+      <div class="comp-grid" style="grid-template-columns: repeat(3,1fr);">
+        <div class="comp-item">
+          <div class="chip chip-blue">Layer 1</div>
+          <h3>TCP Connection Manager</h3>
+          <p>Maintains persistent TCP socket to EEP DSRC Device. Auto-reconnects on drop. One connection per lane/device.</p>
+        </div>
+        <div class="comp-item">
+          <div class="chip chip-blue">Layer 2</div>
+          <h3>Protocol Parser / Encoder</h3>
+          <p>Reads raw bytes from TCP stream, decodes them into message objects per <em>CTR150/EIS/OPC(SI)</em> interface spec. Encodes outbound messages to bytes.</p>
+        </div>
+        <div class="comp-item">
+          <div class="chip chip-green">Layer 3</div>
+          <h3>Message Dispatcher</h3>
+          <p>Routes inbound messages to handlers based on command ID. Stateful: tracks current vehicle session per lane.</p>
+        </div>
+        <div class="comp-item">
+          <div class="chip chip-green">Layer 4</div>
+          <h3>OBU Validator</h3>
+          <p>Validates IU Label and Vehicle Number. Queries local vehicle registry or iplus-living API. Returns pass/deny with reason.</p>
+        </div>
+        <div class="comp-item">
+          <div class="chip chip-amber">Layer 5</div>
+          <h3>Barrier Controller</h3>
+          <p>Builds and sends <code>Set DO Request</code> message to EEP device to trigger barrier open via DO port. Follows with Carpark Process Complete Notification.</p>
+        </div>
+        <div class="comp-item">
+          <div class="chip chip-purple">Layer 6</div>
+          <h3>Session &amp; Audit Logger</h3>
+          <p>Logs each vehicle session (IU Label, Vehicle Number, entry/exit time, validation result, barrier action) to local DB or API.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:0;">
+      <h3>Key Message Handlers OPC Must Implement</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Message (Inbound from EEP)</th>
+            <th>OPC Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>DI Status Notification</strong> (Loop ON)</td>
+            <td>Begin vehicle session. Start timeout timer. Log lane activity.</td>
+          </tr>
+          <tr>
+            <td><strong>OBU Information Notification</strong></td>
+            <td>Extract IU Label, Vehicle Number, VCC, entry/exit flag. Run validation. Decide barrier action.</td>
+          </tr>
+          <tr>
+            <td><strong>Additional OBU Information</strong></td>
+            <td>Supplement session data if needed. (May not be needed for non-payment flow.)</td>
+          </tr>
+          <tr>
+            <td><strong>DSRC Process Complete Notification</strong></td>
+            <td>End session. Log completion. Release lane for next vehicle.</td>
+          </tr>
+          <tr>
+            <td><strong>DI Status Notification</strong> (Loop OFF)</td>
+            <td>Confirm vehicle has cleared the lane. Close session record.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <table style="margin-top:16px;">
+        <thead>
+          <tr>
+            <th>Message (Outbound from OPC)</th>
+            <th>When Sent</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Set DO Request</strong></td>
+            <td>After validation passes — tells EEP device to activate barrier DO port (open gate).</td>
+          </tr>
+          <tr>
+            <td><strong>Carpark Process Complete Notification</strong></td>
+            <td>After barrier command — signals to EEP device that OPC-side work is done.</td>
+          </tr>
+          <tr>
+            <td><strong>CPO/EEP Information Display Request</strong></td>
+            <td>Optional — send welcome / denied message to display on OBU screen.</td>
+          </tr>
+          <tr>
+            <td><strong>Get OBU Information Stop</strong></td>
+            <td>If OPC needs to abort the DSRC session (e.g., manual override).</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── 6. PROTOCOL LAYER NOTE ── -->
+  <div class="section-gap">
+    <div class="section-label">Section 6</div>
+    <h2>Protocol Layer — What You Need from the Interface Spec</h2>
+
+    <div class="card">
+      <p style="margin-bottom:16px;">The EEP manual references <strong>CTR150/EIS/OPC(SI)</strong> — <em>Interface Specification between OPC/TS and EEP DSRC Device (For Carpark SI)</em>. This is the document that defines the actual TCP message format. Before implementing the protocol parser/encoder, the following must be obtained from it:</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Item Needed</th>
+            <th>Why</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>TCP port number</strong> of EEP DSRC Device</td>
+            <td>OPC initiates TCP connection to EEP device — needs the port</td>
+          </tr>
+          <tr>
+            <td><strong>Message frame format</strong><br/>(header, length field, command ID, payload, checksum)</td>
+            <td>To correctly parse incoming bytes and encode outgoing messages</td>
+          </tr>
+          <tr>
+            <td><strong>Command ID table</strong><br/>(hex code per message type)</td>
+            <td>To route inbound messages to correct handler in dispatcher</td>
+          </tr>
+          <tr>
+            <td><strong>OBU Information Notification payload layout</strong></td>
+            <td>Field offsets/sizes for IU Label, Vehicle Number, VCC, entry/exit flag</td>
+          </tr>
+          <tr>
+            <td><strong>Set DO Request payload layout</strong></td>
+            <td>Which DO port number maps to the barrier; open vs. close values</td>
+          </tr>
+          <tr>
+            <td><strong>Carpark Process Complete Notification payload</strong></td>
+            <td>Required fields (lane ID, result code, etc.)</td>
+          </tr>
+          <tr>
+            <td><strong>Timeout values</strong></td>
+            <td>How long EEP device waits for OPC response before timing out</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="note">
+        <div class="note-icon">⚠️</div>
+        <p>
+          <strong>Design tip:</strong> Isolate all byte-level encoding/decoding in a single <code>EepProtocol</code> module. The rest of the OPC service (validation, barrier control, session management) should operate on typed message objects, not raw bytes. This way, the protocol implementation can be filled in once you have the interface spec without touching business logic.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 7. ERROR HANDLING ── -->
+  <div class="section-gap">
+    <div class="section-label">Section 7</div>
+    <h2>Error &amp; Edge Case Handling</h2>
+
+    <div class="card">
+      <table>
+        <thead>
+          <tr>
+            <th>Scenario</th>
+            <th>What Happens</th>
+            <th>OPC Behaviour</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>OBU not present (vehicle has no OBU)</td>
+            <td>EEP device reports DSRC failure after timeout</td>
+            <td>OPC receives DI On but no OBU Notification → hand off to Terminal Station (TS) for manual handling</td>
+          </tr>
+          <tr>
+            <td>Vehicle not in authorized list</td>
+            <td>Validation returns deny</td>
+            <td>OPC does NOT send Set DO Request. Optionally sends CPO/EEP Display Request with "Not Authorized" message. Logs the attempt.</td>
+          </tr>
+          <tr>
+            <td>TCP connection to EEP device drops</td>
+            <td>Socket closed / timeout</td>
+            <td>Auto-reconnect with exponential backoff. Log disconnection. Barrier stays in last state (closed by default on EEP side).</td>
+          </tr>
+          <tr>
+            <td>Validation API unreachable (iplus backend down)</td>
+            <td>HTTP timeout / error</td>
+            <td>Fallback to local DB. If local DB also unavailable, apply configurable policy: deny all OR allow all with alert.</td>
+          </tr>
+          <tr>
+            <td>OPC crashes mid-session</td>
+            <td>No Carpark Process Complete sent</td>
+            <td>EEP device will timeout its own DSRC session. On OPC restart, reconcile open sessions from DB. Barrier should be fail-safe (closed).</td>
+          </tr>
+          <tr>
+            <td>Duplicate OBU notification</td>
+            <td>Same vehicle triggers twice (bouncing loop coil)</td>
+            <td>OPC checks if a session is already active for that IU Label → ignore duplicate within cooldown window (e.g., 10s)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── 8. MODULE BREAKDOWN ── -->
+  <div class="section-gap">
+    <div class="section-label">Section 8</div>
+    <h2>Recommended Module Breakdown (Node.js / TypeScript)</h2>
+
+    <div class="card">
+      <div class="code-block">
+        <pre>
+<span class="cmt">opc-service/</span>
+<span class="cmt">├── src/</span>
+<span class="cmt">│   ├── index.ts                    — Entry point. Starts OPC for each configured lane.</span>
+<span class="cmt">│   ├── config.ts                   — EEP device IP/port, API URLs, timeouts, lane IDs.</span>
+<span class="cmt">│</span>
+<span class="cmt">│   ├── connection/</span>
+<span class="cmt">│   │   └── EepConnection.ts        — TCP socket client. Auto-reconnect. Raw byte I/O.</span>
+<span class="cmt">│</span>
+<span class="cmt">│   ├── protocol/</span>
+<span class="cmt">│   │   ├── types.ts                — TypeScript interfaces for all EEP message objects.</span>
+<span class="cmt">│   │   ├── EepParser.ts            — Bytes → message object (implement per CTR150/EIS/OPC(SI))</span>
+<span class="cmt">│   │   └── EepEncoder.ts           — Message object → bytes (implement per interface spec)</span>
+<span class="cmt">│</span>
+<span class="cmt">│   ├── handlers/</span>
+<span class="cmt">│   │   ├── DiStatusHandler.ts      — Handles DI Status Notification (loop ON/OFF)</span>
+<span class="cmt">│   │   ├── ObuInfoHandler.ts       — Handles OBU Information Notification (main logic)</span>
+<span class="cmt">│   │   └── DsrcCompleteHandler.ts  — Handles DSRC Process Complete Notification</span>
+<span class="cmt">│</span>
+<span class="cmt">│   ├── validation/</span>
+<span class="cmt">│   │   ├── ObuValidator.ts         — Orchestrates all validation steps, returns pass/deny</span>
+<span class="cmt">│   │   ├── LocalVehicleDb.ts       — Queries local SQLite DB of authorized IU Labels</span>
+<span class="cmt">│   │   └── IplusApiClient.ts       — HTTP client to call iplus-living backend for validation</span>
+<span class="cmt">│</span>
+<span class="cmt">│   ├── barrier/</span>
+<span class="cmt">│   │   └── BarrierController.ts    — Sends Set DO Request + Carpark Complete Notification</span>
+<span class="cmt">│</span>
+<span class="cmt">│   ├── session/</span>
+<span class="cmt">│   │   └── SessionManager.ts       — Tracks active vehicle sessions per lane, entry records</span>
+<span class="cmt">│</span>
+<span class="cmt">│   └── audit/</span>
+<span class="cmt">│       └── AuditLogger.ts          — Persists every session event to DB / API for reporting</span>
+<span class="cmt">│</span>
+<span class="cmt">├── package.json</span>
+<span class="cmt">└── tsconfig.json</span>
+        </pre>
+      </div>
+
+      <div class="info-box">
+        <div class="info-box-icon">💡</div>
+        <p>
+          <strong>Multi-lane support:</strong> One OPC service instance can manage multiple lanes by creating one <code>EepConnection</code> + <code>SessionManager</code> per lane. All lanes share the same <code>ObuValidator</code> and <code>AuditLogger</code>.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 9. KEY DECISIONS ── -->
+  <div class="section-gap">
+    <div class="section-label">Section 9</div>
+    <h2>Key Design Decisions to Confirm</h2>
+
+    <div class="card">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Decision</th>
+            <th>Options</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td><strong>Validation data source</strong><br/>Where is the authorized vehicle list stored?</td>
+            <td>Local SQLite on OPC machine synced from iplus-living backend (bidirectional). See Appendix B &amp; C.</td>
+            <td><span class="tag tag-pass">Resolved</span></td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td><strong>Fail-safe policy</strong><br/>If OPC can't reach validation source, what happens?</td>
+            <td>Deny all (safe) · Allow all (available) · Allow registered only (cached)</td>
+            <td><span class="tag tag-warn">To Confirm</span></td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td><strong>No-OBU vehicle handling</strong><br/>Vehicle without OBU arrives at barrier</td>
+            <td>Ignore (TS handles manually) · Trigger alternative flow · Alert operator</td>
+            <td><span class="tag tag-warn">To Confirm</span></td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td><strong>Session persistence</strong><br/>Do entry records need to be stored for exit matching?</td>
+            <td>Yes (entry/exit audit trail) · No (open all authorized vehicles regardless)</td>
+            <td><span class="tag tag-warn">To Confirm</span></td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td><strong>Interface Spec document</strong><br/>CTR150/EIS/OPC(SI) required for protocol layer</td>
+            <td>Obtain from EEP vendor before protocol implementation can begin</td>
+            <td><span class="tag tag-fail">Pending</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!--                      APPENDIX                          -->
+<!-- ════════════════════════════════════════════════════════ -->
+
+<div class="appendix-header">
+  <div class="badge">Appendix</div>
+  <h2>Additional Architecture Decisions</h2>
+  <p>Extended design decisions discussed during planning — season parking, data sync, vehicle registration, tech stack, packaging, and deployment.</p>
+</div>
+
+<div class="container">
+
+  <!-- ── APPENDIX A: SEASON PARKING ── -->
+  <div class="section-gap">
+    <div class="section-label-purple">Appendix A</div>
+    <h2>What is Season Parking?</h2>
+
+    <div class="card">
+      <p style="margin-bottom:16px;">Season Parking is a <strong>monthly/periodic parking subscription</strong> — a vehicle pays a fixed flat fee (monthly or quarterly) to park at a specific car park, rather than paying per entry/exit trip. It is the primary access control model this OPC is built for.</p>
+
+      <table>
+        <thead>
+          <tr><th>Type</th><th>How It Works</th><th>Charge</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Hourly Parking</strong></td>
+            <td>Pay based on duration of each parking session</td>
+            <td>Per trip (duration-based)</td>
+          </tr>
+          <tr>
+            <td><strong>Season Parking</strong></td>
+            <td>Pre-paid subscription — unlimited entry/exit during valid period</td>
+            <td>Flat monthly/quarterly fee</td>
+          </tr>
+          <tr>
+            <td><strong>Complimentary</strong></td>
+            <td>Free parking — mall validation, visitor pass, staff, disability</td>
+            <td>No charge</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="info-box">
+        <div class="info-box-icon">💡</div>
+        <p>
+          <strong>In this OPC system, the registered vehicle list = season parking holders</strong> (plus staff / complimentary vehicles). The OPC checks if the arriving vehicle is an <em>active, non-expired season parker</em> and opens the barrier. No per-trip fee calculation is needed — which is why payment processing is out of scope.
+        </p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Season Parking Lifecycle in iplus + OPC</h3>
+      <ul class="steps-list">
+        <li><span class="sn">1</span><div class="st"><strong>Resident applies for season parking in iplus</strong><span>Submits vehicle number, IU Label, desired period</span></div></li>
+        <li><span class="sn">2</span><div class="st"><strong>Admin approves and sets valid_until</strong><span>e.g., valid_until = 2025-01-31 (end of month)</span></div></li>
+        <li><span class="sn">3</span><div class="st"><strong>iplus syncs record to OPC local DB</strong><span>Via delta sync — OPC receives new/updated record</span></div></li>
+        <li><span class="sn">4</span><div class="st"><strong>Vehicle arrives at barrier</strong><span>EEP DSRC Device reads OBU → sends OBU Information Notification to OPC</span></div></li>
+        <li><span class="sn">5</span><div class="st"><strong>OPC checks: status = active AND valid_until ≥ today?</strong><span>YES → barrier opens · NO → barrier stays closed (expired or not renewed)</span></div></li>
+        <li><span class="sn">6</span><div class="st"><strong>On expiry — resident must renew in iplus</strong><span>iplus updates valid_until → OPC syncs → barrier works again</span></div></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ── APPENDIX B: REGISTERED LIST SYNC ── -->
+  <div class="section-gap">
+    <div class="section-label-purple">Appendix B</div>
+    <h2>Registered Vehicle List — Sync from iplus Backend</h2>
+
+    <div class="card">
+      <h3>Sync Architecture</h3>
+      <div class="sync-diagram">
+        <div class="sync-box master">
+          <h4>🏢 iplus Backend (Master)</h4>
+          <ul>
+            <li>Season parking applications</li>
+            <li>Admin approvals &amp; renewals</li>
+            <li>Suspend / revoke vehicle</li>
+            <li>Access zone assignments</li>
+            <li>Source of truth for all data</li>
+          </ul>
+        </div>
+        <div class="sync-arrow-col">
+          <div class="arr">⬇</div>
+          <div style="font-size:10px;color:var(--gray);">delta sync every 5 min</div>
+          <div class="arr">⬆</div>
+          <div style="font-size:10px;color:var(--gray);">OPC pushes new registrations</div>
+        </div>
+        <div class="sync-box local">
+          <h4>💻 OPC Local DB (SQLite)</h4>
+          <ul>
+            <li>Local copy of registered vehicles</li>
+            <li>Used for barrier validation</li>
+            <li>Works offline (last synced list)</li>
+            <li>Can add new vehicles locally</li>
+            <li>Pushes new records back to iplus</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="note">
+        <div class="note-icon">⚠️</div>
+        <p><strong>OPC validates from local DB only</strong> — no real-time API call per vehicle arrival. This ensures barrier response is instant and works even if iplus backend is temporarily unreachable.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Registered Vehicle Record Fields</h3>
+      <table>
+        <thead>
+          <tr><th>Field</th><th>Purpose</th><th>Example</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>iu_label</strong></td><td>Primary lookup key when vehicle arrives</td><td>IU1234567890</td></tr>
+          <tr><td><strong>vehicle_number</strong></td><td>License plate — secondary check / display</td><td>SBA1234A</td></tr>
+          <tr><td><strong>unit_id</strong></td><td>Which resident/unit this vehicle belongs to</td><td>UNIT-042</td></tr>
+          <tr><td><strong>access_zones</strong></td><td>Which barriers this vehicle can enter</td><td>["barrier-A", "barrier-B"]</td></tr>
+          <tr><td><strong>valid_from</strong></td><td>Season start date</td><td>2025-01-01</td></tr>
+          <tr><td><strong>valid_until</strong></td><td>Season expiry — barrier blocks after this date</td><td>2025-01-31</td></tr>
+          <tr><td><strong>status</strong></td><td>active / suspended / expired</td><td>active</td></tr>
+          <tr><td><strong>source</strong></td><td>Where this record originated</td><td>iplus / opc</td></tr>
+          <tr><td><strong>synced_to_backend</strong></td><td>For OPC-originated records — has it been pushed up?</td><td>true / false</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>Sync Schedule &amp; Mechanism</h3>
+      <table>
+        <thead>
+          <tr><th>Trigger</th><th>Type</th><th>What Happens</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>OPC boots up</strong></td>
+            <td><span class="tag tag-info">Full Sync</span></td>
+            <td>Downloads entire registered vehicle list fresh from iplus backend</td>
+          </tr>
+          <tr>
+            <td><strong>Every 5 minutes</strong></td>
+            <td><span class="tag tag-info">Delta Sync</span></td>
+            <td>GET /api/opc/registered-vehicles?updated_since=&lt;last_sync_timestamp&gt; — only changed records</td>
+          </tr>
+          <tr>
+            <td><strong>Admin triggers in iplus</strong></td>
+            <td><span class="tag tag-pass">Push (optional)</span></td>
+            <td>iplus POSTs update to OPC immediately — useful for instant suspension/revocation</td>
+          </tr>
+          <tr>
+            <td><strong>Operator clicks "Sync Now" in OPC UI</strong></td>
+            <td><span class="tag tag-warn">Manual</span></td>
+            <td>Forces immediate full sync — useful after bulk changes in iplus</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>iplus Backend Endpoints Required</h3>
+      <div class="code-block">
+        <pre>
+<span class="cmt">// Sync DOWN — OPC pulls registered vehicles from iplus</span>
+<span class="kw">GET</span>  /api/opc/registered-vehicles?updated_since=2025-01-01T10:00:00Z
+     → [ { iu_label, vehicle_number, unit_id, access_zones, valid_until, status }, ... ]
+
+<span class="cmt">// Sync UP — OPC pushes new registration to iplus</span>
+<span class="kw">POST</span> /api/vehicles
+     { iu_label, vehicle_number, unit_id, access_zones, valid_until, registered_by: "opc-01" }
+
+<span class="cmt">// Update — OPC edits an existing record</span>
+<span class="kw">PUT</span>  /api/vehicles/:id
+     { valid_until, status, access_zones }
+
+<span class="cmt">// Heartbeat — OPC reports it is alive</span>
+<span class="kw">POST</span> /api/opc/heartbeat
+     { opc_id, lane_id, last_sync_at, connection_status }
+        </pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── APPENDIX C: LOCAL VEHICLE REGISTRATION ── -->
+  <div class="section-gap">
+    <div class="section-label-purple">Appendix C</div>
+    <h2>Local Vehicle Registration on OPC</h2>
+
+    <div class="card">
+      <p style="margin-bottom:16px;">The OPC operator can register new vehicles directly on the OPC machine — not just rely on iplus backend sync. When added locally, the record is saved to the local DB immediately (barrier works right away) and pushed to iplus in the background.</p>
+
+      <h3>Registration Form Fields (OPC UI)</h3>
+      <table>
+        <thead>
+          <tr><th>Field</th><th>Input Type</th><th>Required</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>IU Label</strong></td><td>Text input / barcode scan</td><td><span class="tag tag-pass">Required</span></td></tr>
+          <tr><td><strong>Vehicle Number</strong></td><td>Text input (license plate)</td><td><span class="tag tag-pass">Required</span></td></tr>
+          <tr><td><strong>Resident / Unit</strong></td><td>Dropdown (from synced unit list)</td><td><span class="tag tag-pass">Required</span></td></tr>
+          <tr><td><strong>Valid Until</strong></td><td>Date picker</td><td><span class="tag tag-pass">Required</span></td></tr>
+          <tr><td><strong>Access Zone</strong></td><td>Multi-select (which barriers)</td><td><span class="tag tag-pass">Required</span></td></tr>
+          <tr><td><strong>Vehicle Type / VCC</strong></td><td>Dropdown (Car / Motorcycle / Heavy)</td><td><span class="tag tag-warn">Optional</span></td></tr>
+          <tr><td><strong>Notes</strong></td><td>Text area</td><td><span class="tag tag-warn">Optional</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>Registration Flow</h3>
+      <ul class="steps-list">
+        <li><span class="sn">1</span><div class="st"><strong>Operator fills in registration form on OPC UI</strong><span>IU Label, vehicle number, unit, valid until, access zone</span></div></li>
+        <li><span class="sn">2</span><div class="st"><strong>OPC saves to local SQLite immediately</strong><span>status = active, source = opc, synced_to_backend = false — barrier works right away</span></div></li>
+        <li><span class="sn">3</span><div class="st"><strong>Background job: POST /api/vehicles to iplus backend</strong><span>Pushes new registration up to master DB</span></div></li>
+        <li><span class="sn">4</span><div class="st"><strong>On success: mark record as synced_to_backend = true</strong><span>iplus now has the record as master; will sync to all other OPCs on next delta</span></div></li>
+        <li><span class="sn">5</span><div class="st"><strong>On failure: add to retry queue</strong><span>Retry every 1 minute. Alert operator after 10 failed attempts.</span></div></li>
+      </ul>
+
+      <div class="note">
+        <div class="note-icon">⚠️</div>
+        <p><strong>Offline support:</strong> If the OPC machine has no internet/LAN at the time of registration, the vehicle is still registered locally and can use the barrier immediately. The record syncs to iplus as soon as connectivity is restored via the retry queue.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Conflict Handling</h3>
+      <table>
+        <thead>
+          <tr><th>Scenario</th><th>Resolution</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Same IU Label registered on OPC and iplus simultaneously</td>
+            <td>iplus backend is master — last write wins. OPC gets corrected on next delta sync.</td>
+          </tr>
+          <tr>
+            <td>OPC registered a vehicle while offline; iplus already has it</td>
+            <td>Backend returns 409 Conflict → OPC merges / updates local record with backend version.</td>
+          </tr>
+          <tr>
+            <td>Vehicle deleted/suspended on iplus while OPC is offline</td>
+            <td>On next delta sync, OPC receives status = suspended / deleted → updates local DB → barrier blocks.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── APPENDIX D: DESKTOP PACKAGING ── -->
+  <div class="section-gap">
+    <div class="section-label-purple">Appendix D</div>
+    <h2>Making it a Locally Installable Desktop Application</h2>
+
+    <div class="card">
+      <h3>Packaging Options</h3>
+      <div class="pkg-grid">
+        <div class="pkg-box">
+          <div class="chip chip-blue">Option 1</div>
+          <div class="pkg-title">Electron Desktop App</div>
+          <div class="pkg-sub">Full desktop app with GUI window</div>
+          <ul>
+            <li>Windows .exe installer with wizard</li>
+            <li>GUI dashboard built-in</li>
+            <li>System tray icon</li>
+            <li>Auto-start on Windows boot</li>
+            <li>Built-in auto-updater</li>
+            <li class="con">Heavier package (~150MB+)</li>
+          </ul>
+        </div>
+        <div class="pkg-box recommended">
+          <div class="chip chip-green">Recommended</div>
+          <div class="pkg-title">pkg + NSSM + Inno Setup</div>
+          <div class="pkg-sub">Headless service + installer</div>
+          <ul>
+            <li>Single self-contained .exe</li>
+            <li>Windows Service (auto-restart)</li>
+            <li>Survives reboots without login</li>
+            <li>Local web UI on localhost:3000</li>
+            <li>Lightweight (~30MB)</li>
+            <li>Inno Setup wraps into setup.exe</li>
+          </ul>
+        </div>
+        <div class="pkg-box">
+          <div class="chip chip-gray">Option 3</div>
+          <div class="pkg-title">Plain .exe (pkg only)</div>
+          <div class="pkg-sub">Simplest — single file</div>
+          <ul>
+            <li>No Node.js required on PC</li>
+            <li>Drop .exe anywhere and run</li>
+            <li>Wrap with NSSM manually</li>
+            <li class="con">No installer wizard</li>
+            <li class="con">Manual setup on each machine</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>What the Installer Does on the Car Park PC</h3>
+      <ul class="steps-list">
+        <li><span class="sn">1</span><div class="st"><strong>Technician runs: EEP OPC Setup 1.0.0.exe</strong><span>Install wizard appears — choose install path</span></div></li>
+        <li><span class="sn">2</span><div class="st"><strong>App installed to C:\Program Files\EEP OPC\</strong><span>All app files, config, SQLite DB folder created</span></div></li>
+        <li><span class="sn">3</span><div class="st"><strong>Windows Service registered automatically</strong><span>NSSM registers OPC as a Windows Service with auto-restart</span></div></li>
+        <li><span class="sn">4</span><div class="st"><strong>Desktop shortcut + Start Menu entry created</strong><span>Shortcut opens browser to http://localhost:3000 (local web UI)</span></div></li>
+        <li><span class="sn">5</span><div class="st"><strong>Service starts automatically</strong><span>OPC service starts on every Windows boot — no login required</span></div></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ── APPENDIX E: TECH STACK ── -->
+  <div class="section-gap">
+    <div class="section-label-purple">Appendix E</div>
+    <h2>Tech Stack — Electron + React + NestJS</h2>
+
+    <div class="card">
+      <h3>How They Fit Together</h3>
+      <div class="code-block">
+        <pre>
+<span class="cmt">┌──────────────────────────────────────────────────────┐</span>
+<span class="cmt">│                  ELECTRON (shell)                     │</span>
+<span class="cmt">│                                                       │</span>
+<span class="cmt">│  ┌───────────────────┐   ┌────────────────────────┐  │</span>
+<span class="cmt">│  │   Main Process    │   │   Renderer Process     │  │</span>
+<span class="cmt">│  │                   │   │                        │  │</span>
+<span class="cmt">│  │   NestJS App      │◄─►│      React App         │  │</span>
+<span class="cmt">│  │                   │   │                        │  │</span>
+<span class="cmt">│  │ • TCP → EEP Dev   │   │  • Lane dashboard      │  │</span>
+<span class="cmt">│  │ • SQLite DB       │   │  • Registration form   │  │</span>
+<span class="cmt">│  │ • Sync service    │   │  • Access logs         │  │</span>
+<span class="cmt">│  │ • OBU validator   │   │  • Settings page       │  │</span>
+<span class="cmt">│  │ • Barrier ctrl    │   │                        │  │</span>
+<span class="cmt">│  └────────┬──────────┘   └────────────────────────┘  │</span>
+<span class="cmt">│           │   HTTP (localhost:3001) + WebSocket        │</span>
+<span class="cmt">└───────────┼──────────────────────────────────────────┘</span>
+<span class="cmt">            │  TCP / Ethernet</span>
+<span class="cmt">     ┌──────┴──────┐</span>
+<span class="cmt">     │ EEP DSRC    │</span>
+<span class="cmt">     │ Device      │</span>
+<span class="cmt">     └─────────────┘</span>
+        </pre>
+      </div>
+
+      <div class="info-box">
+        <div class="info-box-icon">💡</div>
+        <p><strong>React talks to NestJS via two channels:</strong> HTTP REST for CRUD operations (vehicle registration, logs, settings) and WebSocket for real-time lane events (OBU arrivals, barrier open/close notifications). Same pattern as any React + NestJS web app — no new concepts.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>NestJS Module Breakdown</h3>
+      <table>
+        <thead><tr><th>Module</th><th>Responsibility</th></tr></thead>
+        <tbody>
+          <tr><td><strong>EepConnectionModule</strong></td><td>TCP client to EEP DSRC Device — connect, reconnect, raw byte I/O</td></tr>
+          <tr><td><strong>ProtocolModule</strong></td><td>Parse/encode EEP messages (bytes ↔ typed objects per CTR150/EIS/OPC(SI))</td></tr>
+          <tr><td><strong>ObuHandlerModule</strong></td><td>Receives OBU Information Notification, drives the full barrier open flow</td></tr>
+          <tr><td><strong>ValidationModule</strong></td><td>Checks IU Label against local SQLite DB, returns pass/deny</td></tr>
+          <tr><td><strong>BarrierModule</strong></td><td>Sends Set DO Request + Carpark Process Complete Notification</td></tr>
+          <tr><td><strong>SyncModule</strong></td><td>Polls iplus backend every 5 min, pushes OPC-originated registrations up</td></tr>
+          <tr><td><strong>VehicleModule</strong></td><td>CRUD for registered vehicles — local write + async push to iplus</td></tr>
+          <tr><td><strong>DatabaseModule</strong></td><td>SQLite via TypeORM — registered_vehicles, sessions, pending_sync tables</td></tr>
+          <tr><td><strong>ApiModule</strong></td><td>HTTP endpoints + WebSocket gateway for React UI</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>React Pages</h3>
+      <table>
+        <thead><tr><th>Route</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td><strong>/dashboard</strong></td><td>Live lane status, EEP connection health, last 10 vehicle arrivals, barrier state</td></tr>
+          <tr><td><strong>/vehicles</strong></td><td>Registered vehicle list — search, filter by status, edit, suspend, delete</td></tr>
+          <tr><td><strong>/vehicles/new</strong></td><td>Registration form — IU Label, plate number, unit, valid until, access zone</td></tr>
+          <tr><td><strong>/logs</strong></td><td>Full access log — entry/exit time, IU Label, vehicle number, result (granted/denied)</td></tr>
+          <tr><td><strong>/settings</strong></td><td>EEP device IP/port, iplus backend URL, sync interval, fail-safe policy, lane config</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── APPENDIX F: DESKTOP APP SETUP ── -->
+  <div class="section-gap">
+    <div class="section-label-purple">Appendix F</div>
+    <h2>Desktop App — Full Project Setup</h2>
+
+    <div class="card">
+      <h3>Project Structure</h3>
+      <div class="code-block">
+        <pre>
+<span class="cmt">opc-desktop/</span>
+<span class="cmt">├── electron/</span>
+<span class="cmt">│   ├── main.ts          ← Electron entry: starts NestJS + opens window</span>
+<span class="cmt">│   └── preload.ts       ← Bridge between Electron main and React renderer</span>
+<span class="cmt">│</span>
+<span class="cmt">├── backend/             ← NestJS application (all OPC logic)</span>
+<span class="cmt">│   └── src/</span>
+<span class="cmt">│       └── (modules as described in Appendix E)</span>
+<span class="cmt">│</span>
+<span class="cmt">├── frontend/            ← React application (operator UI)</span>
+<span class="cmt">│   └── src/</span>
+<span class="cmt">│       └── (pages as described in Appendix E)</span>
+<span class="cmt">│</span>
+<span class="cmt">├── assets/</span>
+<span class="cmt">│   ├── icon.ico         ← Windows app icon</span>
+<span class="cmt">│   └── icon.png         ← Linux app icon</span>
+<span class="cmt">│</span>
+<span class="cmt">├── package.json         ← Root scripts: dev, build, dist</span>
+<span class="cmt">└── electron-builder.yml ← Packaging config (Windows + Linux)</span>
+        </pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Key Files</h3>
+
+      <h3 style="margin-top:16px; font-size:13px; color:var(--gray);">electron/main.ts — starts NestJS then opens window</h3>
+      <div class="code-block">
+        <pre>
+<span class="kw">import</span> { app, BrowserWindow } <span class="kw">from</span> <span class="str">'electron'</span>;
+<span class="kw">import</span> { NestFactory } <span class="kw">from</span> <span class="str">'@nestjs/core'</span>;
+<span class="kw">import</span> { AppModule } <span class="kw">from</span> <span class="str">'../backend/src/app.module'</span>;
+
+app.<span class="fn">whenReady</span>().<span class="fn">then</span>(<span class="kw">async</span> () => {
+  <span class="cmt">// 1. Start NestJS backend on port 3001</span>
+  <span class="kw">const</span> nestApp = <span class="kw">await</span> NestFactory.<span class="fn">create</span>(AppModule);
+  <span class="kw">await</span> nestApp.<span class="fn">listen</span>(<span class="num">3001</span>);
+
+  <span class="cmt">// 2. Open Electron window (loads React)</span>
+  <span class="kw">const</span> win = <span class="kw">new</span> <span class="fn">BrowserWindow</span>({ width: <span class="num">1280</span>, height: <span class="num">800</span> });
+  app.isPackaged
+    ? win.<span class="fn">loadFile</span>(<span class="str">'frontend/dist/index.html'</span>)   <span class="cmt">// production</span>
+    : win.<span class="fn">loadURL</span>(<span class="str">'http://localhost:5173'</span>);         <span class="cmt">// development</span>
+});
+        </pre>
+      </div>
+
+      <h3 style="margin-top:20px; font-size:13px; color:var(--gray);">package.json scripts</h3>
+      <div class="code-block">
+        <pre>
+<span class="str">"scripts"</span>: {
+  <span class="cmt">// Development — all 3 run together with hot reload</span>
+  <span class="str">"dev"</span>: <span class="str">"concurrently \"npm run dev:nest\" \"npm run dev:react\" \"npm run dev:electron\""</span>,
+  <span class="str">"dev:nest"</span>:     <span class="str">"cd backend  &amp;&amp; npm run start:dev"</span>,
+  <span class="str">"dev:react"</span>:    <span class="str">"cd frontend &amp;&amp; npm run dev"</span>,
+  <span class="str">"dev:electron"</span>: <span class="str">"wait-on http://localhost:5173 http://localhost:3001 &amp;&amp; electron ."</span>,
+
+  <span class="cmt">// Production build + package into installer</span>
+  <span class="str">"build"</span>: <span class="str">"npm run build:nest &amp;&amp; npm run build:react &amp;&amp; npm run build:electron"</span>,
+  <span class="str">"dist"</span>:  <span class="str">"npm run build &amp;&amp; electron-builder"</span>,
+  <span class="str">"dist:win"</span>:   <span class="str">"npm run build &amp;&amp; electron-builder --win"</span>,
+  <span class="str">"dist:linux"</span>: <span class="str">"npm run build &amp;&amp; electron-builder --linux"</span>
+}
+        </pre>
+      </div>
+
+      <h3 style="margin-top:20px; font-size:13px; color:var(--gray);">electron-builder.yml — packaging for Windows + Linux</h3>
+      <div class="code-block">
+        <pre>
+<span class="fn">appId</span>: com.iplus.eep-opc
+<span class="fn">productName</span>: EEP OPC
+
+<span class="cmt"># Windows installer</span>
+<span class="fn">win</span>:
+  target: [{ target: nsis, arch: [x64] }]
+  icon: assets/icon.ico
+<span class="fn">nsis</span>:
+  oneClick: false
+  createDesktopShortcut: true
+  runAfterFinish: true
+
+<span class="cmt"># Linux packages</span>
+<span class="fn">linux</span>:
+  target:
+    - { target: AppImage, arch: [x64] }  <span class="cmt"># universal</span>
+    - { target: deb,      arch: [x64] }  <span class="cmt"># Ubuntu/Debian</span>
+    - { target: rpm,      arch: [x64] }  <span class="cmt"># CentOS/Fedora</span>
+  icon: assets/icon.png
+  category: Utility
+
+<span class="cmt"># Auto-update server</span>
+<span class="fn">publish</span>:
+  provider: generic
+  url: https://your-iplus-server.com/opc-updates/
+        </pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Build Output</h3>
+      <div class="code-block">
+        <pre>
+<span class="cmt"># Build for Windows</span>
+npm run dist:win
+
+<span class="cmt"># Build for Linux</span>
+npm run dist:linux
+
+<span class="cmt">release/</span>
+<span class="cmt">├── EEP OPC Setup 1.0.0.exe       ← Windows installer — send to technician</span>
+<span class="cmt">├── EEP OPC-1.0.0.AppImage        ← Linux universal (run directly)</span>
+<span class="cmt">├── eep-opc_1.0.0_amd64.deb       ← Ubuntu / Debian</span>
+<span class="cmt">└── eep-opc-1.0.0.x86_64.rpm      ← CentOS / Fedora</span>
+        </pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── APPENDIX G: LINUX SUPPORT ── -->
+  <div class="section-gap">
+    <div class="section-label-purple">Appendix G</div>
+    <h2>Linux OS Support</h2>
+
+    <div class="card">
+      <p style="margin-bottom:16px;">The <strong>exact same codebase</strong> builds for both Windows and Linux. Only the packaging config and auto-start mechanism differ. Linux is actually a <strong>better choice</strong> for an embedded OPC machine — no Windows license cost, more stable for long-running embedded systems.</p>
+
+      <div class="os-compare">
+        <div class="os-box">
+          <h4>🪟 Windows</h4>
+          <table>
+            <tr><td>Installer</td><td><code>.exe</code> (NSIS wizard)</td></tr>
+            <tr><td>Auto-start</td><td>Electron built-in / Windows Service</td></tr>
+            <tr><td>OS cost</td><td>Windows license required</td></tr>
+            <tr><td>Code changes</td><td>None</td></tr>
+          </table>
+        </div>
+        <div class="os-box">
+          <h4>🐧 Linux</h4>
+          <table>
+            <tr><td>Installer</td><td><code>.AppImage</code> / <code>.deb</code> / <code>.rpm</code></td></tr>
+            <tr><td>Auto-start</td><td>systemd service</td></tr>
+            <tr><td>OS cost</td><td>Free</td></tr>
+            <tr><td>Code changes</td><td>None</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Auto-Start on Linux — systemd Service</h3>
+      <div class="code-block">
+        <pre>
+<span class="cmt"># /etc/systemd/system/eep-opc.service</span>
+
+[Unit]
+Description=EEP OPC Barrier Control Service
+After=network.target
+
+[Service]
+Type=simple
+User=opc
+ExecStart=/opt/EEP OPC/eep-opc
+Restart=always
+RestartSec=5
+Environment=DISPLAY=:0
+
+[Install]
+WantedBy=multi-user.target
+        </pre>
+      </div>
+      <div class="code-block" style="margin-top:8px;">
+        <pre>
+<span class="cmt"># Enable and start</span>
+sudo systemctl <span class="fn">enable</span> eep-opc
+sudo systemctl <span class="fn">start</span>  eep-opc
+
+<span class="cmt"># Check status</span>
+sudo systemctl <span class="fn">status</span> eep-opc
+        </pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Recommended Linux Distros for OPC Machine</h3>
+      <table>
+        <thead><tr><th>Distro</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Ubuntu 22.04 LTS</strong></td><td>Best Electron support, long-term support until 2027, easiest to manage remotely</td></tr>
+          <tr><td><strong>Debian 12</strong></td><td>Very stable, lightweight, ideal for embedded/kiosk deployments</td></tr>
+          <tr><td><strong>Raspberry Pi OS</strong></td><td>If using Raspberry Pi as OPC machine — low cost, compact, fanless</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── APPENDIX H: FUTURE UPDATES ── -->
+  <div class="section-gap">
+    <div class="section-label-purple">Appendix H</div>
+    <h2>Updating the Application — Future Code Changes</h2>
+
+    <div class="card">
+      <h3>Update Strategy Options</h3>
+      <div class="pkg-grid">
+        <div class="pkg-box">
+          <div class="chip chip-gray">Option 1</div>
+          <div class="pkg-title">Manual via Remote Access</div>
+          <div class="pkg-sub">TeamViewer / AnyDesk / RDP</div>
+          <ul>
+            <li>No infrastructure needed</li>
+            <li>Works for very few machines</li>
+            <li class="con">Manual effort every update</li>
+            <li class="con">Scales poorly across sites</li>
+          </ul>
+        </div>
+        <div class="pkg-box recommended">
+          <div class="chip chip-green">Recommended</div>
+          <div class="pkg-title">Auto-Update from Server</div>
+          <div class="pkg-sub">OPC checks on startup</div>
+          <ul>
+            <li>Zero manual effort per update</li>
+            <li>OPC checks iplus server on boot</li>
+            <li>Downloads + installs silently</li>
+            <li>Works across all car park sites</li>
+            <li>Electron built-in: electron-updater</li>
+          </ul>
+        </div>
+        <div class="pkg-box">
+          <div class="chip chip-blue">Option 3</div>
+          <div class="pkg-title">CI/CD Pipeline</div>
+          <div class="pkg-sub">GitLab CI / GitHub Actions</div>
+          <ul>
+            <li>Fully automated build + publish</li>
+            <li>git push → new installer on server</li>
+            <li>All OPCs update on next startup</li>
+            <li class="con">Higher initial setup effort</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Recommended: Auto-Update Flow</h3>
+      <ul class="steps-list">
+        <li><span class="sn">1</span><div class="st"><strong>Developer pushes new code to GitLab/GitHub</strong><span>Increments version number: e.g., 1.0.0 → 1.0.1</span></div></li>
+        <li><span class="sn">2</span><div class="st"><strong>CI/CD pipeline builds new installer</strong><span>npm run dist:win + dist:linux → creates new .exe and .AppImage</span></div></li>
+        <li><span class="sn">3</span><div class="st"><strong>Pipeline uploads installer to iplus update server</strong><span>https://your-iplus-server.com/opc-updates/ — updates latest-version.json</span></div></li>
+        <li><span class="sn">4</span><div class="st"><strong>OPC app checks for updates on every startup</strong><span>electron-updater calls /opc-updates/latest-version.json — compares with local version</span></div></li>
+        <li><span class="sn">5</span><div class="st"><strong>If newer version found — download silently</strong><span>Downloads new installer in background while OPC runs normally</span></div></li>
+        <li><span class="sn">6</span><div class="st"><strong>Install on next restart (or prompt operator)</strong><span>autoUpdater.quitAndInstall() — new version active within seconds</span></div></li>
+      </ul>
+
+      <div class="info-box">
+        <div class="info-box-icon">💡</div>
+        <p><strong>Rollback support:</strong> Keep the last 2 versions on the update server. If a new version fails to start (crash on boot), the OPC can fall back to the previous version automatically. The update server serves a <code>latest-version.json</code> with the current and previous version URLs.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Auto-Update Code (Electron)</h3>
+      <div class="code-block">
+        <pre>
+<span class="kw">import</span> { autoUpdater } <span class="kw">from</span> <span class="str">'electron-updater'</span>;
+
+app.<span class="fn">whenReady</span>().<span class="fn">then</span>(<span class="kw">async</span> () => {
+  <span class="kw">await</span> <span class="fn">startNest</span>();
+  <span class="kw">await</span> <span class="fn">createWindow</span>();
+
+  <span class="cmt">// Check for updates on startup</span>
+  autoUpdater.<span class="fn">checkForUpdatesAndNotify</span>();
+});
+
+<span class="cmt">// When update is downloaded — install on next restart</span>
+autoUpdater.<span class="fn">on</span>(<span class="str">'update-downloaded'</span>, () => {
+  autoUpdater.<span class="fn">quitAndInstall</span>();
+});
+        </pre>
+      </div>
+
+      <div class="code-block" style="margin-top:8px;">
+        <pre>
+<span class="cmt"># To release a new version:</span>
+npm version patch          <span class="cmt"># bumps 1.0.0 → 1.0.1</span>
+npm run dist               <span class="cmt"># builds new installer</span>
+<span class="cmt"># Upload release/ folder to iplus update server</span>
+<span class="cmt"># All OPC machines update on next startup ✓</span>
+        </pre>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ── APPENDIX I: COMMUNICATION PROTOCOLS ── -->
+  <div class="section-gap">
+    <div class="section-label-purple">Appendix I</div>
+    <h2>Communication Protocols — How OPC Talks to EEP DSRC Device</h2>
+
+    <div class="card">
+      <h3>Transport Layer — TCP/IP over Ethernet (LAN)</h3>
+      <div class="code-block"><pre>
+<span class="cmt">OPC Machine ──── Ethernet Cable ──── EEP DSRC Device</span>
+<span class="cmt">(TCP Client)          LAN              (TCP Server)</span>
+      </pre></div>
+      <table style="margin-top:16px;">
+        <thead><tr><th>Property</th><th>Detail</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Protocol</strong></td><td>TCP/IP — raw binary over Ethernet LAN</td></tr>
+          <tr><td><strong>Who connects</strong></td><td>OPC is the TCP client — it initiates the connection to EEP device</td></tr>
+          <tr><td><strong>Who listens</strong></td><td>EEP DSRC Device is the TCP server — listens on a fixed IP + port</td></tr>
+          <tr><td><strong>Connection lifetime</strong></td><td>One persistent socket per lane — kept open all day, never closed between messages</td></tr>
+          <tr><td><strong>Direction</strong></td><td>Full-duplex — both sides can send at any time independently</td></tr>
+          <tr><td><strong>Data format</strong></td><td>Raw binary bytes — no HTTP, no JSON, no headers</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>This is NOT Like an HTTP API Call</h3>
+      <div class="two-col">
+        <div class="col-box">
+          <h3 style="color:var(--red);">❌ HTTP API (what you know)</h3>
+          <div class="code-block"><pre>
+<span class="cmt">OPC                    iplus Backend</span>
+ │                          │
+ │── POST /api/vehicles ───►│  OPC asks
+ │◄─ 200 OK { data } ───────│  Server answers
+ │                          │
+ ✗ connection closes
+ ✗ server can NEVER send
+   unless OPC asks first
+          </pre></div>
+          <ul class="clean" style="margin-top:12px;">
+            <li>OPC always initiates every exchange</li>
+            <li>Connection opens → request → response → closes</li>
+            <li>Server cannot push data unprompted</li>
+            <li>Stateless — each call is independent</li>
+          </ul>
+        </div>
+        <div class="col-box">
+          <h3 style="color:var(--green);">✅ TCP Socket (EEP DSRC)</h3>
+          <div class="code-block"><pre>
+<span class="cmt">OPC                    EEP DSRC Device</span>
+ │══ connect once ══════════│  open pipe
+ │                          │
+ │◄─ DI Status Notif ───────│  EEP pushes (unprompted)
+ │◄─ OBU Info Notif ────────│  EEP pushes (unprompted)
+ │── Set DO Request ────────►│  OPC sends command
+ │◄─ Set DO Response ────────│  EEP replies
+ │── Carpark Complete ──────►│  OPC sends
+ ║                           ║
+ ║  connection stays OPEN    ║
+ ║  forever                  ║
+          </pre></div>
+          <ul class="clean" style="margin-top:12px;">
+            <li>Either side sends any time, no asking</li>
+            <li>Connection opens once — stays open all day</li>
+            <li>EEP pushes events without OPC requesting</li>
+            <li>No URLs, no verbs, no JSON — raw bytes</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="info-box" style="margin-top:16px;">
+        <div class="info-box-icon">💡</div>
+        <p><strong>Best analogy:</strong> HTTP is like sending a letter — you write, post it, wait for a reply, and the other person can only respond to your letters. TCP Socket is like a walkie-talkie — the channel stays open, and either side can talk freely whenever something happens.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Message Framing — How Raw Bytes Become Messages</h3>
+      <p style="margin-bottom:12px;">TCP is a byte stream with no concept of "messages." The EEP protocol uses a <strong>frame structure</strong> to mark where each message starts and ends. The typical structure for such systems:</p>
+      <div class="code-block"><pre>
+<span class="cmt">┌─────────┬──────────┬───────────┬───────────┬─────────────────┬──────────┐</span>
+<span class="cmt">│  STX    │  Cmd ID  │  Seq No   │  Length   │    Payload      │ Checksum │</span>
+<span class="cmt">│ 1 byte  │ 1 byte   │  1 byte   │  2 bytes  │   N bytes       │  1 byte  │</span>
+<span class="cmt">│  0x02   │  0xXX    │  0x00-FF  │  0x0000+  │ (cmd-specific)  │ XOR/CRC  │</span>
+<span class="cmt">└─────────┴──────────┴───────────┴───────────┴─────────────────┴──────────┘</span>
+      </pre></div>
+      <div class="note">
+        <div class="note-icon">⚠️</div>
+        <p><strong>Important:</strong> The exact byte offsets, field sizes, and checksum algorithm are defined in <strong>CTR150/EIS/OPC(SI)</strong>. The above is a typical pattern — always verify against the actual interface spec before implementing the parser.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Full Protocol Stack</h3>
+      <div class="code-block"><pre>
+<span class="cmt">Application Layer   ┌──────────────────────────────────────────┐</span>
+<span class="cmt">                    │  OBU Validator · Barrier Controller       │</span>
+<span class="cmt">                    │  Session Manager · Audit Logger           │</span>
+<span class="cmt">                    └──────────────┬───────────────────────────┘</span>
+<span class="cmt">                                   │ typed message objects</span>
+<span class="cmt">Message Layer       ┌──────────────┴───────────────────────────┐</span>
+<span class="cmt">                    │  Protocol Parser  /  Encoder              │</span>
+<span class="cmt">                    │  bytes ↔ message objects                  │</span>
+<span class="cmt">                    │  (implement per CTR150/EIS/OPC(SI))       │</span>
+<span class="cmt">                    └──────────────┬───────────────────────────┘</span>
+<span class="cmt">                                   │ raw framed bytes</span>
+<span class="cmt">Framing Layer       ┌──────────────┴───────────────────────────┐</span>
+<span class="cmt">                    │  Buffer Manager                           │</span>
+<span class="cmt">                    │  accumulate stream → extract full frames  │</span>
+<span class="cmt">                    └──────────────┬───────────────────────────┘</span>
+<span class="cmt">                                   │ TCP byte stream</span>
+<span class="cmt">Transport Layer     ┌──────────────┴───────────────────────────┐</span>
+<span class="cmt">                    │  TCP Socket (Node.js net.Socket)          │</span>
+<span class="cmt">                    │  Persistent · Auto-reconnect              │</span>
+<span class="cmt">                    └──────────────┬───────────────────────────┘</span>
+<span class="cmt">                                   │ Ethernet / LAN</span>
+<span class="cmt">Physical Layer      ┌──────────────┴───────────────────────────┐</span>
+<span class="cmt">                    │  EEP DSRC Device (TCP Server)             │</span>
+<span class="cmt">                    │  Fixed IP + Port on local LAN             │</span>
+<span class="cmt">                    └──────────────────────────────────────────┘</span>
+      </pre></div>
+    </div>
+
+    <div class="card">
+      <h3>All Messages — Direction &amp; Pattern</h3>
+      <table>
+        <thead><tr><th>Message</th><th>Direction</th><th>Pattern</th><th>Trigger</th></tr></thead>
+        <tbody>
+          <tr><td><strong>DI Status Notification</strong></td><td>EEP → OPC</td><td><span class="tag tag-info">Event (push)</span></td><td>Loop coil ON / OFF</td></tr>
+          <tr><td><strong>OBU Information Notification</strong></td><td>EEP → OPC</td><td><span class="tag tag-info">Event (push)</span></td><td>OBU enters DSRC range</td></tr>
+          <tr><td><strong>Additional OBU Information</strong></td><td>EEP → OPC</td><td><span class="tag tag-info">Event (push)</span></td><td>Follows OBU Info Notification</td></tr>
+          <tr><td><strong>DSRC Process Complete Notification</strong></td><td>EEP → OPC</td><td><span class="tag tag-info">Event (push)</span></td><td>DSRC session ends</td></tr>
+          <tr><td><strong>Set DO Request</strong></td><td>OPC → EEP</td><td><span class="tag tag-pass">Command</span></td><td>OPC wants to open/close barrier</td></tr>
+          <tr><td><strong>Set DO Response</strong></td><td>EEP → OPC</td><td><span class="tag tag-pass">Response</span></td><td>Reply to Set DO Request</td></tr>
+          <tr><td><strong>Carpark Process Complete Notification</strong></td><td>OPC → EEP</td><td><span class="tag tag-pass">Command</span></td><td>OPC finished processing (no reply needed)</td></tr>
+          <tr><td><strong>CPO/EEP Display Request</strong></td><td>OPC → EEP</td><td><span class="tag tag-pass">Command</span></td><td>OPC wants to show message on OBU</td></tr>
+          <tr><td><strong>Get OBU Information Stop</strong></td><td>OPC → EEP</td><td><span class="tag tag-pass">Command</span></td><td>OPC aborts DSRC session</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── APPENDIX J: HOW OPC LISTENS TO TCP ── -->
+  <div class="section-gap">
+    <div class="section-label-purple">Appendix J</div>
+    <h2>How OPC Listens to the TCP Socket</h2>
+
+    <div class="card">
+      <p style="margin-bottom:16px;">Node.js uses an <strong>event-driven model</strong>. You register callback functions once — Node.js watches the socket in the background and fires them automatically when data arrives. You never write a manual polling loop.</p>
+
+      <h3>Step 1 — Open the Connection (once on startup)</h3>
+      <div class="code-block"><pre>
+<span class="kw">import</span> * <span class="kw">as</span> net <span class="kw">from</span> <span class="str">'net'</span>;
+
+<span class="kw">const</span> socket = <span class="kw">new</span> net.<span class="fn">Socket</span>();
+
+<span class="cmt">// Connect to EEP DSRC Device — IP + port from config</span>
+socket.<span class="fn">connect</span>(<span class="num">8080</span>, <span class="str">'192.168.1.100'</span>, () => {
+  console.<span class="fn">log</span>(<span class="str">'Connected to EEP DSRC Device'</span>);
+  <span class="cmt">// Connection stays open — do NOT close it</span>
+});
+      </pre></div>
+    </div>
+
+    <div class="card">
+      <h3>Step 2 — Listen for Incoming Data</h3>
+      <div class="code-block"><pre>
+<span class="cmt">// This fires AUTOMATICALLY whenever EEP sends anything</span>
+<span class="cmt">// You register it ONCE — Node.js handles the rest</span>
+socket.<span class="fn">on</span>(<span class="str">'data'</span>, (chunk: Buffer) => {
+  <span class="cmt">// chunk = raw bytes that just arrived from EEP device</span>
+  <span class="fn">processBytes</span>(chunk);
+});
+      </pre></div>
+      <div class="info-box" style="margin-top:12px;">
+        <div class="info-box-icon">💡</div>
+        <p><code>socket.on('data', ...)</code> is the listener. Node.js runs an <strong>event loop</strong> that watches the socket 24/7. The moment EEP sends anything — vehicle arrives, OBU connects, barrier confirmed — your callback fires automatically. No need to keep asking "did anything come in?"</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Step 3 — Buffer Bytes Into Complete Messages</h3>
+      <p style="margin-bottom:12px;">TCP is a stream — one EEP message may arrive split across 2 chunks, or 2 messages may arrive in 1 chunk. You must buffer bytes until you have a complete frame:</p>
+      <div class="code-block"><pre>
+<span class="kw">let</span> buffer = Buffer.<span class="fn">alloc</span>(<span class="num">0</span>);
+<span class="kw">const</span> HEADER_SIZE = <span class="num">5</span>; <span class="cmt">// STX + CmdID + SeqNo + Length(2)</span>
+
+socket.<span class="fn">on</span>(<span class="str">'data'</span>, (chunk: Buffer) => {
+
+  <span class="cmt">// ① Add new bytes to running buffer</span>
+  buffer = Buffer.<span class="fn">concat</span>([buffer, chunk]);
+
+  <span class="cmt">// ② Extract complete messages in a loop</span>
+  <span class="kw">while</span> (<span class="kw">true</span>) {
+
+    <span class="cmt">// Not enough bytes for a header yet — wait for more</span>
+    <span class="kw">if</span> (buffer.length &lt; HEADER_SIZE) <span class="kw">break</span>;
+
+    <span class="cmt">// Read payload length from header (bytes 3-4)</span>
+    <span class="kw">const</span> payloadLength = buffer.<span class="fn">readUInt16BE</span>(<span class="num">3</span>);
+    <span class="kw">const</span> totalSize     = HEADER_SIZE + payloadLength + <span class="num">1</span>; <span class="cmt">// +1 checksum</span>
+
+    <span class="cmt">// Full frame hasn't arrived yet — wait for more chunks</span>
+    <span class="kw">if</span> (buffer.length &lt; totalSize) <span class="kw">break</span>;
+
+    <span class="cmt">// ③ Extract one complete frame</span>
+    <span class="kw">const</span> frame = buffer.<span class="fn">slice</span>(<span class="num">0</span>, totalSize);
+    buffer      = buffer.<span class="fn">slice</span>(totalSize); <span class="cmt">// remove it from buffer</span>
+
+    <span class="cmt">// ④ Route to correct handler</span>
+    <span class="fn">handleMessage</span>(frame);
+  }
+});
+      </pre></div>
+    </div>
+
+    <div class="card">
+      <h3>Step 4 — Route &amp; Handle the Message</h3>
+      <div class="code-block"><pre>
+<span class="kw">function</span> <span class="fn">handleMessage</span>(frame: Buffer) {
+  <span class="kw">const</span> commandId = frame.<span class="fn">readUInt8</span>(<span class="num">1</span>); <span class="cmt">// byte 1 = command ID</span>
+
+  <span class="kw">switch</span> (commandId) {
+    <span class="kw">case</span> <span class="num">0x01</span>: <span class="fn">handleLoopCoil</span>(frame);    <span class="kw">break</span>; <span class="cmt">// DI Status Notification</span>
+    <span class="kw">case</span> <span class="num">0x02</span>: <span class="fn">handleObuArrival</span>(frame);  <span class="kw">break</span>; <span class="cmt">// OBU Information Notification</span>
+    <span class="kw">case</span> <span class="num">0x04</span>: <span class="fn">handleSessionDone</span>(frame); <span class="kw">break</span>; <span class="cmt">// DSRC Process Complete</span>
+    <span class="kw">case</span> <span class="num">0x11</span>: <span class="fn">handleSetDoResponse</span>(frame);<span class="kw">break</span>; <span class="cmt">// Set DO Response</span>
+  }
+}
+
+<span class="kw">async function</span> <span class="fn">handleObuArrival</span>(frame: Buffer) {
+  <span class="cmt">// Extract OBU fields from payload</span>
+  <span class="kw">const</span> iuLabel       = frame.<span class="fn">slice</span>(<span class="num">5</span>, <span class="num">15</span>).<span class="fn">toString</span>(<span class="str">'ascii'</span>);
+  <span class="kw">const</span> vehicleNumber = frame.<span class="fn">slice</span>(<span class="num">15</span>, <span class="num">25</span>).<span class="fn">toString</span>(<span class="str">'ascii'</span>);
+
+  <span class="cmt">// Validate against local DB</span>
+  <span class="kw">const</span> isValid = <span class="kw">await</span> validator.<span class="fn">check</span>(iuLabel);
+
+  <span class="kw">if</span> (isValid) {
+    socket.<span class="fn">write</span>(<span class="fn">encodeSetDoRequest</span>()); <span class="cmt">// send barrier open command</span>
+  }
+}
+      </pre></div>
+    </div>
+
+    <div class="card">
+      <h3>Step 5 — Handle Disconnection &amp; Auto-Reconnect</h3>
+      <div class="code-block"><pre>
+socket.<span class="fn">on</span>(<span class="str">'close'</span>, () => {
+  console.<span class="fn">log</span>(<span class="str">'Disconnected — reconnecting...'</span>);
+  <span class="fn">reconnect</span>();
+});
+
+socket.<span class="fn">on</span>(<span class="str">'error'</span>, (err) => {
+  console.<span class="fn">error</span>(<span class="str">'Socket error:'</span>, err.message);
+});
+
+<span class="kw">function</span> <span class="fn">reconnect</span>(attempt = <span class="num">1</span>) {
+  <span class="kw">const</span> delay = Math.<span class="fn">min</span>(<span class="num">1000</span> * attempt, <span class="num">30000</span>); <span class="cmt">// max 30s between retries</span>
+  <span class="fn">setTimeout</span>(() => {
+    socket.<span class="fn">connect</span>(<span class="num">8080</span>, <span class="str">'192.168.1.100'</span>, () => {
+      console.<span class="fn">log</span>(<span class="str">'Reconnected!'</span>);
+    });
+  }, delay);
+}
+      </pre></div>
+
+      <table style="margin-top:16px;">
+        <thead><tr><th>Event</th><th>When it fires</th><th>OPC Action</th></tr></thead>
+        <tbody>
+          <tr><td><code>connect</code></td><td>TCP handshake succeeds</td><td>Log connected, reset retry counter</td></tr>
+          <tr><td><code>data</code></td><td>EEP sends any bytes</td><td>Buffer → extract frame → dispatch to handler</td></tr>
+          <tr><td><code>close</code></td><td>TCP connection drops</td><td>Start reconnect with exponential backoff</td></tr>
+          <tr><td><code>error</code></td><td>Network error (refused, timeout)</td><td>Log error, trigger reconnect</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>The Wrong Way vs The Right Way</h3>
+      <div class="two-col">
+        <div class="col-box">
+          <h3 style="color:var(--red); font-size:13px;">❌ Wrong — polling loop (blocking)</h3>
+          <div class="code-block"><pre>
+<span class="cmt">// NEVER do this in Node.js</span>
+<span class="kw">while</span> (<span class="kw">true</span>) {
+  <span class="kw">const</span> data = socket.<span class="fn">read</span>();
+  <span class="kw">if</span> (data) <span class="fn">handle</span>(data);
+  <span class="cmt">// blocks the entire process</span>
+  <span class="cmt">// nothing else can run</span>
+}
+          </pre></div>
+        </div>
+        <div class="col-box">
+          <h3 style="color:var(--green); font-size:13px;">✅ Right — event listener (non-blocking)</h3>
+          <div class="code-block"><pre>
+<span class="cmt">// Register ONCE at startup</span>
+socket.<span class="fn">on</span>(<span class="str">'data'</span>, (chunk) => {
+  <span class="fn">handle</span>(chunk);
+  <span class="cmt">// Node.js calls this automatically</span>
+  <span class="cmt">// process is free to do other work</span>
+});
+          </pre></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── APPENDIX K: HOW DSRC KNOWS WHERE TO SEND ── -->
+  <div class="section-gap">
+    <div class="section-label-purple">Appendix K</div>
+    <h2>How Does the EEP DSRC Device Know Where to Send Data?</h2>
+
+    <div class="card">
+      <h3>The Short Answer</h3>
+      <div class="info-box">
+        <div class="info-box-icon">💡</div>
+        <p><strong>The EEP DSRC Device does NOT need to know your OPC app's IP address.</strong> When your OPC app connects to the EEP device, TCP automatically creates a two-way pipe. The EEP device sends data back through that exact same pipe — no separate outbound connection needed.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>The Phone Call Analogy</h3>
+      <div class="code-block"><pre>
+<span class="cmt">HTTP  = Sending a letter.</span>
+<span class="cmt">        You write it, post it, wait for a reply.</span>
+<span class="cmt">        The other person can ONLY respond to YOUR letters.</span>
+<span class="cmt">        They cannot write to you first.</span>
+
+<span class="cmt">TCP Socket = A phone call.</span>
+<span class="cmt">        You dial the number (OPC connects to EEP's IP + port).</span>
+<span class="cmt">        They pick up (EEP accepts the connection).</span>
+<span class="cmt">        Now BOTH can talk freely through the same open line.</span>
+<span class="cmt">        They don't need to "dial back" — the line is already open.</span>
+      </pre></div>
+    </div>
+
+    <div class="card">
+      <h3>What Actually Happens — Step by Step</h3>
+      <ul class="steps-list">
+        <li>
+          <span class="sn">1</span>
+          <div class="st">
+            <strong>OPC app starts — knows EEP device IP + port (from config)</strong>
+            <span>EEP_IP = 192.168.1.100 · EEP_PORT = 8080 — set once in settings</span>
+          </div>
+        </li>
+        <li>
+          <span class="sn">2</span>
+          <div class="st">
+            <strong>OPC calls socket.connect('192.168.1.100', 8080)</strong>
+            <span>OPC dials the EEP device — only OPC needs to know the address</span>
+          </div>
+        </li>
+        <li>
+          <span class="sn">3</span>
+          <div class="st">
+            <strong>TCP 3-way handshake completes</strong>
+            <span>OPC → SYN → EEP · OPC ← SYN-ACK ← EEP · OPC → ACK → EEP</span>
+          </div>
+        </li>
+        <li>
+          <span class="sn">4</span>
+          <div class="st">
+            <strong>EEP device now holds a reference to this connection</strong>
+            <span>EEP can see: "OPC connected from 192.168.1.50 port 54321" — it stores this socket</span>
+          </div>
+        </li>
+        <li>
+          <span class="sn">5</span>
+          <div class="st">
+            <strong>Vehicle arrives → EEP sends data through the SAME connection</strong>
+            <span>EEP writes bytes into the existing socket → arrives at OPC's socket.on('data') handler</span>
+          </div>
+        </li>
+        <li>
+          <span class="sn">6</span>
+          <div class="st">
+            <strong>Connection stays open until OPC or EEP closes it</strong>
+            <span>No reconnect needed between vehicles — same pipe used for all events all day</span>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>What Each Side Needs to Know</h3>
+      <div class="two-col">
+        <div class="col-box">
+          <h3>OPC App (your code) needs:</h3>
+          <ul class="clean">
+            <li>EEP device IP address (e.g., 192.168.1.100)</li>
+            <li>EEP device TCP port (e.g., 8080)</li>
+            <li>Nothing else — OPC initiates everything</li>
+          </ul>
+        </div>
+        <div class="col-box">
+          <h3>EEP DSRC Device needs:</h3>
+          <ul class="clean">
+            <li>Its own port to listen on (8080)</li>
+            <li>Nothing about OPC's IP address</li>
+            <li>Just accepts whoever connects and uses that socket to reply</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="code-block" style="margin-top:16px;"><pre>
+<span class="cmt">// OPC configured with:           EEP Device configured with:</span>
+<span class="cmt">EEP_IP   = 192.168.1.100          (nothing about OPC)</span>
+<span class="cmt">EEP_PORT = 8080                   LISTEN_PORT = 8080</span>
+<span class="cmt">                                  (accepts whoever connects)</span>
+      </pre></div>
+    </div>
+
+    <div class="card">
+      <h3>Inside EEP Device Firmware (Conceptual)</h3>
+      <p style="margin-bottom:12px;">To help visualise — this is what the EEP device firmware does internally (concept only, not actual code):</p>
+      <div class="code-block"><pre>
+<span class="cmt">// EEP device firmware — simplified concept</span>
+server.<span class="fn">listen</span>(<span class="num">8080</span>);
+
+server.<span class="fn">on</span>(<span class="str">'connection'</span>, (opcSocket) => {
+  <span class="cmt">// opcSocket = the connection YOUR OPC app opened</span>
+  <span class="cmt">// EEP stores this reference — no need to know OPC's IP</span>
+
+  loopCoil.<span class="fn">on</span>(<span class="str">'vehicleDetected'</span>, () => {
+    opcSocket.<span class="fn">write</span>(diStatusNotification); <span class="cmt">// sends back on SAME pipe</span>
+  });
+
+  obu.<span class="fn">on</span>(<span class="str">'dataReady'</span>, (obuData) => {
+    opcSocket.<span class="fn">write</span>(obuInfoNotification);  <span class="cmt">// same pipe again</span>
+  });
+});
+      </pre></div>
+      <div class="info-box" style="margin-top:12px;">
+        <div class="info-box-icon">💡</div>
+        <p><strong>Your OPC code does the same thing in reverse</strong> — your <code>socket.on('data')</code> is the equivalent of EEP's <code>opcSocket.on('data')</code>. Both sides are just listening on the same open pipe and writing to it when needed.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>What Happens if OPC Restarts?</h3>
+      <ul class="steps-list">
+        <li><span class="sn">1</span><div class="st"><strong>OPC crashes or restarts</strong><span>TCP connection drops — EEP device detects socket closed</span></div></li>
+        <li><span class="sn">2</span><div class="st"><strong>EEP device discards the old socket reference</strong><span>It goes back to waiting for a new connection on port 8080</span></div></li>
+        <li><span class="sn">3</span><div class="st"><strong>OPC restarts — calls socket.connect() again</strong><span>New TCP connection established — new socket reference on both sides</span></div></li>
+        <li><span class="sn">4</span><div class="st"><strong>Communication resumes normally</strong><span>EEP device now sends all events through the new pipe</span></div></li>
+      </ul>
+      <div class="note">
+        <div class="note-icon">⚠️</div>
+        <p><strong>During the disconnection window</strong>, vehicles arriving at the lane will trigger the EEP device but OPC won't receive the notifications. This is why the auto-reconnect logic (Appendix J, Step 5) must reconnect as fast as possible — ideally within 1–2 seconds.</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
