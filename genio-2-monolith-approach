@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>iplus-living — Bounded Context Architecture</title>
+<style>
+  :root {
+    --bg: #10141c;
+    --panel: #182030;
+    --panel-2: #131a28;
+    --line: #2b3547;
+    --line-strong: #3d4a63;
+    --text: #e8ecf4;
+    --muted: #8894ac;
+    --accent: #4fd0c4;
+    --accent-soft: rgba(79, 208, 196, 0.12);
+    --m2-accent: #e2a23f;
+    --m2-soft: rgba(226, 162, 63, 0.12);
+    --sync: #8b93e8;
+    --async: #4fd0c4;
+    --font-serif: Cambria, Georgia, "Times New Roman", serif;
+    --font-body: "Segoe UI", system-ui, -apple-system, sans-serif;
+    --font-mono: "Cascadia Code", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f3f5f8; --panel: #ffffff; --panel-2: #eceff4;
+      --line: #dbe1ea; --line-strong: #b9c3d1; --text: #1c2433; --muted: #5c6b82;
+      --accent: #0f9488; --accent-soft: rgba(15, 148, 136, 0.09);
+      --m2-accent: #a8691a; --m2-soft: rgba(168, 105, 26, 0.09);
+      --sync: #5a63c4; --async: #0f9488;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); margin: 0; }
+
+  .page {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 52px 28px 80px;
+    font-family: var(--font-body);
+  }
+
+  .eyebrow {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+  }
+
+  .masthead {
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 24px;
+    margin-bottom: 32px;
+  }
+
+  .masthead h1 {
+    font-family: var(--font-serif);
+    font-size: 32px;
+    font-weight: 600;
+    margin: 8px 0 10px;
+  }
+
+  .masthead p {
+    color: var(--muted);
+    font-size: 14.5px;
+    max-width: 70ch;
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  .schematic { overflow-x: auto; padding-bottom: 8px; }
+  .schematic-inner { min-width: 980px; }
+
+  .gateway-row { display: flex; justify-content: center; margin-bottom: 0; }
+  .gateway-card {
+    background: var(--panel);
+    border: 1px solid var(--line-strong);
+    border-radius: 10px;
+    padding: 12px 28px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    text-align: center;
+  }
+  .gateway-card .sub { display:block; font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  .connectors { position: relative; height: 40px; }
+  .stem { position: absolute; left: 50%; top: 0; width: 2px; height: 18px; background: var(--line-strong); transform: translateX(-50%); }
+  .bus { position: absolute; left: 22%; right: 22%; top: 18px; height: 2px; background: var(--line-strong); }
+  .drop { position: absolute; top: 18px; width: 2px; height: 18px; background: var(--line-strong); }
+  .drop-1 { left: 22%; transform: translateX(-50%); }
+  .drop-2 { left: 78%; transform: translateX(-50%); }
+
+  .monoliths {
+    display: grid;
+    grid-template-columns: 2.2fr 1fr;
+    gap: 22px;
+    margin-bottom: 8px;
+  }
+
+  .monolith {
+    border-radius: 12px;
+    padding: 16px 18px 18px;
+  }
+
+  .monolith.m1 {
+    background: var(--panel);
+    border: 1px solid var(--accent);
+    box-shadow: 0 0 0 1px var(--accent-soft) inset;
+  }
+
+  .monolith.m2 {
+    background: var(--panel);
+    border: 1px solid var(--m2-accent);
+    box-shadow: 0 0 0 1px var(--m2-soft) inset;
+  }
+
+  .monolith-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 12px;
+  }
+
+  .monolith-head h2 {
+    font-family: var(--font-serif);
+    font-size: 18px;
+    margin: 2px 0 0;
+  }
+
+  .m1 .monolith-head h2 { color: var(--accent); }
+  .m2 .monolith-head h2 { color: var(--m2-accent); }
+
+  .monolith-head .count {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .context-grid {
+    display: grid;
+    gap: 7px;
+  }
+
+  .m1 .context-grid { grid-template-columns: repeat(4, 1fr); }
+  .m2 .context-grid { grid-template-columns: repeat(1, 1fr); }
+
+  .context-chip {
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 7px 9px;
+    font-size: 11.5px;
+    line-height: 1.35;
+  }
+
+  .context-chip.highlight {
+    border-color: var(--sync);
+    box-shadow: 0 0 0 1px var(--sync) inset;
+  }
+
+  .context-chip .tbl-count {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .m2 .context-chip { padding: 10px 12px; font-size: 12.5px; }
+
+  .vendor-sub {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 6px;
+  }
+
+  .vendor-sub span {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 2px 6px;
+    color: var(--muted);
+  }
+
+  .integration-example {
+    margin-top: 26px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 18px 22px;
+  }
+
+  .integration-example h2 {
+    font-family: var(--font-serif);
+    font-size: 18px;
+    margin: 0 0 14px;
+  }
+
+  .flow-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+
+  .flow-box {
+    background: var(--panel-2);
+    border: 1px solid var(--line-strong);
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    white-space: nowrap;
+  }
+
+  .flow-arrow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 10.5px;
+    font-family: var(--font-mono);
+    flex: 1;
+    min-width: 140px;
+  }
+
+  .flow-arrow .line {
+    width: 100%;
+    height: 2px;
+    position: relative;
+    margin: 4px 0;
+  }
+
+  .flow-arrow.async .line { background: repeating-linear-gradient(90deg, var(--async) 0 6px, transparent 6px 10px); }
+  .flow-arrow.sync .line { background: var(--sync); }
+
+  .flow-arrow .line::after {
+    content: '';
+    position: absolute;
+    right: -1px;
+    top: -3px;
+    border-left: 7px solid var(--arrow-color, var(--muted));
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+  }
+  .flow-arrow.async .line::after { border-left-color: var(--async); }
+  .flow-arrow.sync .line::after { border-left-color: var(--sync); }
+
+  .flow-arrow .tag {
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .flow-arrow.async .tag { color: var(--async); }
+  .flow-arrow.sync .tag { color: var(--sync); }
+
+  .legend-row {
+    display: flex;
+    gap: 22px;
+    flex-wrap: wrap;
+    margin-top: 30px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .legend-row .dot {
+    display: inline-block;
+    width: 20px;
+    height: 2px;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+
+  .notes-box {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 18px 22px;
+    margin-top: 26px;
+  }
+
+  .notes-box h2 {
+    font-family: var(--font-serif);
+    font-size: 18px;
+    margin: 0 0 10px;
+  }
+
+  .notes-box ul {
+    margin: 0;
+    padding-left: 20px;
+    font-size: 13px;
+    line-height: 1.65;
+  }
+  .notes-box li { margin-bottom: 8px; }
+
+  code {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 0 5px;
+  }
+
+  footer.notes {
+    margin-top: 36px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  @media (max-width: 720px) {
+    .monoliths { grid-template-columns: 1fr; }
+    .m1 .context-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  .diagram-title {
+    font-family: var(--font-serif);
+    font-size: 20px;
+    margin: 0 0 6px;
+  }
+
+  .diagram-sub {
+    color: var(--muted);
+    font-size: 13.5px;
+    margin: 0 0 20px;
+    max-width: 70ch;
+    line-height: 1.5;
+  }
+
+  .infra-3col {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 18px;
+  }
+
+  .infra-box {
+    background: var(--panel);
+    border: 1px solid var(--line-strong);
+    border-radius: 10px;
+    padding: 18px 20px;
+    text-align: center;
+  }
+
+  .infra-box.m1-box { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent-soft) inset; }
+  .infra-box.m2-box { border-color: var(--m2-accent); box-shadow: 0 0 0 1px var(--m2-soft) inset; }
+
+  .infra-box h3 {
+    font-family: var(--font-serif);
+    font-size: 16px;
+    margin: 0 0 4px;
+  }
+  .infra-box.m1-box h3 { color: var(--accent); }
+  .infra-box.m2-box h3 { color: var(--m2-accent); }
+
+  .infra-box .sub {
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .comm-mid {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    min-width: 170px;
+  }
+
+  .comm-mid .flow-arrow { min-width: unset; }
+
+  .comm-mid .detail {
+    font-size: 10px;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  .db-row {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .db-box {
+    background: var(--panel);
+    border: 1px solid var(--line-strong);
+    border-radius: 10px;
+    padding: 14px 24px;
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    min-width: 260px;
+  }
+
+  .db-box.redis { border-color: var(--sync); }
+
+  .db-box .sub {
+    display: block;
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 4px;
+    font-family: var(--font-body);
+  }
+
+  @media (max-width: 720px) {
+    .infra-3col { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="masthead">
+    <h1>Bounded Context Architecture</h1>
+    <p>Two monoliths, ~20 bounded contexts distributed between them. The monolith count is a deployment decision; the bounded-context count is a modeling decision — each context keeps its own schema, rules, and vocabulary regardless of which monolith it deploys inside.</p>
+  </div>
+
+  <div class="schematic">
+    <div class="schematic-inner">
+
+      <h2 class="diagram-title">System Architecture — Monoliths, Service Bus, and Shared Database</h2>
+      <p class="diagram-sub">One physical database serves both monoliths — no split by service. Inter-monolith traffic never touches the external Gateway; it stays on the internal network via a direct sync API call or an async Service Bus event, depending on the pattern.</p>
+
+      <div class="gateway-row">
+        <div class="gateway-card">Gateway / BFF<span class="sub">external client traffic only — not used for inter-monolith calls</span></div>
+      </div>
+
+      <div class="connectors">
+        <div class="stem"></div>
+        <div class="bus"></div>
+        <div class="drop drop-1"></div>
+        <div class="drop drop-2"></div>
+      </div>
+
+      <div class="infra-3col">
+        <div class="infra-box m1-box">
+          <h3>Monolith 1</h3>
+          <span class="sub">Core Platform</span>
+        </div>
+
+        <div class="comm-mid">
+          <div class="flow-arrow sync">
+            <span class="tag">sync</span>
+            <div class="line" style="--arrow-color: var(--sync)"></div>
+            <span class="detail">internal API (HTTP) — user-initiated, e.g. guard override</span>
+          </div>
+          <div class="flow-arrow async">
+            <span class="tag">async</span>
+            <div class="line" style="--arrow-color: var(--async)"></div>
+            <span class="detail">Service Bus, Topic + Subscription — e.g. BookingConfirmed/Cancelled</span>
+          </div>
+        </div>
+
+        <div class="infra-box m2-box">
+          <h3>Monolith 2</h3>
+          <span class="sub">Access Control &amp; Device Integration</span>
+        </div>
+      </div>
+
+      <div class="connectors">
+        <div class="stem"></div>
+        <div class="bus"></div>
+        <div class="drop drop-1"></div>
+        <div class="drop drop-2"></div>
+      </div>
+
+      <div class="db-row">
+        <div class="db-box">Shared MySQL (InnoDB)<span class="sub">one physical database — schema-per-module, converted from the legacy MyISAM/InnoDB mix</span></div>
+        <div class="db-box redis">Redis<span class="sub">sequence counters, session/auth, live device state</span></div>
+      </div>
+
+      <h2 class="diagram-title" style="margin-top: 40px;">Bounded contexts inside each monolith</h2>
+
+      <div class="monoliths">
+
+        <div class="monolith m1">
+          <div class="monolith-head">
+            <h2>Monolith 1 — Core Platform</h2>
+            <span class="count">17 bounded contexts · ~433 tables</span>
+          </div>
+          <div class="context-grid">
+            <div class="context-chip highlight">Facilities &amp; Amenity Booking<span class="tbl-count">56 tables</span></div>
+            <div class="context-chip">Payments / Billing<span class="tbl-count">29 tables</span></div>
+            <div class="context-chip">Units &amp; Occupancy<span class="tbl-count">20 tables</span></div>
+            <div class="context-chip">Documents<span class="tbl-count">5 tables</span></div>
+            <div class="context-chip">Notifications &amp; Comms<span class="tbl-count">38 tables</span></div>
+            <div class="context-chip">Community / Wall / Governance<span class="tbl-count">55 tables</span></div>
+            <div class="context-chip">DLP — Construction Defects<span class="tbl-count">68 tables</span></div>
+            <div class="context-chip">Requests / Helpdesk / Contractor<span class="tbl-count">27 tables</span></div>
+            <div class="context-chip">Property / Condo Core<span class="tbl-count">24 tables</span></div>
+            <div class="context-chip highlight">Identity / Auth<span class="tbl-count">22 tables</span></div>
+            <div class="context-chip">Security / RBAC<span class="tbl-count">20 tables</span></div>
+            <div class="context-chip">Visitor Management<span class="tbl-count">14 tables</span></div>
+            <div class="context-chip">Smart Home Gateway<span class="tbl-count">10 tables</span></div>
+            <div class="context-chip">Tenant / Company / Config<span class="tbl-count">11 tables</span></div>
+            <div class="context-chip">Handover<span class="tbl-count">5 tables</span></div>
+            <div class="context-chip">Audit &amp; Reporting<span class="tbl-count">23 tables</span></div>
+            <div class="context-chip">Integrations / Misc<span class="tbl-count">6 tables</span></div>
+          </div>
+        </div>
+
+        <div class="monolith m2">
+          <div class="monolith-head">
+            <h2>Monolith 2 — Access Control &amp; Device Integration</h2>
+            <span class="count">3 bounded contexts · ~125 tables</span>
+          </div>
+          <div class="context-grid">
+            <div class="context-chip highlight">ME (Fermax native)<span class="tbl-count">45 tables</span></div>
+            <div class="context-chip">
+              3rd-Party Vendor Integrations<span class="tbl-count">50 tables</span>
+              <div class="vendor-sub"><span>Hikvision ACL</span><span>EPS ACL</span><span>VIDA ACL</span><span>IP Camera ACL</span></div>
+            </div>
+            <div class="context-chip">Video Intercom / Meet Panels<span class="tbl-count">30 tables</span></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="integration-example">
+    <h2>Cross-monolith integration — the two patterns in use</h2>
+
+    <div class="flow-row">
+      <div class="flow-box">Facilities<br><span style="color:var(--muted); font-size:10.5px;">Monolith 1</span></div>
+      <div class="flow-arrow async">
+        <span class="tag">async · event</span>
+        <div class="line" style="--arrow-color: var(--async)"></div>
+        <span style="color:var(--muted)">BookingConfirmed / Cancelled via Service Bus</span>
+      </div>
+      <div class="flow-box">ME<br><span style="color:var(--muted); font-size:10.5px;">Monolith 2</span></div>
+    </div>
+
+    <div class="flow-row">
+      <div class="flow-box">Identity / RBAC<br><span style="color:var(--muted); font-size:10.5px;">Monolith 1</span></div>
+      <div class="flow-arrow sync">
+        <span class="tag">sync · internal API</span>
+        <div class="line" style="--arrow-color: var(--sync)"></div>
+        <span style="color:var(--muted)">guard override unlock, waits for result</span>
+      </div>
+      <div class="flow-box">ME<br><span style="color:var(--muted); font-size:10.5px;">Monolith 2</span></div>
+    </div>
+
+    <div class="legend-row">
+      <span><span class="dot" style="background: repeating-linear-gradient(90deg, var(--async) 0 4px, transparent 4px 7px);"></span>Async event — caller doesn't wait; used for state-sync after a business event</span>
+      <span><span class="dot" style="background: var(--sync);"></span>Sync API — caller waits for a result; used for user-initiated commands</span>
+    </div>
+  </div>
+
+  <div class="notes-box">
+    <h2>What keeps this from becoming legacy system #2</h2>
+    <ul>
+      <li><b>No context reaches directly into another's tables or repository.</b> Every cross-context interaction goes through a defined interface — an event or an internal API — the same discipline applies whether the two contexts share a process (inside Monolith 1) or cross a network boundary (Monolith 1 ↔ Monolith 2).</li>
+      <li><b>Vendor integrations each get their own anti-corruption layer.</b> Hikvision, EPS, VIDA, and IP Camera each translate their own vendor-specific data shape into ME's internal model — vendor quirks never leak into the core domain or into each other.</li>
+      <li><b>The <code>holiday</code>/<code>holiday_by_days</code>/<code>non_working_days</code> tables are a deliberate shared kernel</b> — reused as-is by Facilities, ME, Handover, and Smart Home Gateway, rather than each context reimplementing its own calendar.</li>
+      <li><b>Clean boundaries today make extraction cheap later.</b> If Payments (or any other Monolith 1 context) later proves it needs independent scaling, extracting it means turning an in-process call into a network call — not untangling years of direct cross-references, because the boundary already exists in the code.</li>
+    </ul>
+  </div>
+
+</div>
+</body>
+</html>
